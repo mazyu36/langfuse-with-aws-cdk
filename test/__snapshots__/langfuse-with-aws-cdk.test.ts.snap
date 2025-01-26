@@ -1,0 +1,3201 @@
+// Jest Snapshot v1, https://goo.gl/fbAQLP
+
+exports[`snapshot test 1`] = `
+{
+  "Outputs": {
+    "BastionBastionHostBastionHostIdE6364C04": {
+      "Description": "Instance ID of the bastion host. Use this to connect via SSM Session Manager",
+      "Value": {
+        "Ref": "BastionBastionHostC769482C",
+      },
+    },
+    "BastionDatabaseSecretsCommand818E45AD": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "aws secretsmanager get-secret-value --secret-id ",
+            {
+              "Fn::Join": [
+                "-",
+                [
+                  {
+                    "Fn::Select": [
+                      0,
+                      {
+                        "Fn::Split": [
+                          "-",
+                          {
+                            "Fn::Select": [
+                              6,
+                              {
+                                "Fn::Split": [
+                                  ":",
+                                  {
+                                    "Ref": "DatabaseClusterSecretD1FB634F",
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                  {
+                    "Fn::Select": [
+                      1,
+                      {
+                        "Fn::Split": [
+                          "-",
+                          {
+                            "Fn::Select": [
+                              6,
+                              {
+                                "Fn::Split": [
+                                  ":",
+                                  {
+                                    "Ref": "DatabaseClusterSecretD1FB634F",
+                                  },
+                                ],
+                              },
+                            ],
+                          },
+                        ],
+                      },
+                    ],
+                  },
+                ],
+              ],
+            },
+            " --region us-east-1",
+          ],
+        ],
+      },
+    },
+    "BastionPortForwardCommand0772C6AF": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "aws ssm start-session --region us-east-1 --target ",
+            {
+              "Ref": "BastionBastionHostC769482C",
+            },
+            " --document-name AWS-StartPortForwardingSessionToRemoteHost --parameters '{"portNumber":["",
+            {
+              "Fn::GetAtt": [
+                "DatabaseCluster5B53A178",
+                "Endpoint.Port",
+              ],
+            },
+            ""], "localPortNumber":["",
+            {
+              "Fn::GetAtt": [
+                "DatabaseCluster5B53A178",
+                "Endpoint.Port",
+              ],
+            },
+            ""], "host": ["",
+            {
+              "Fn::GetAtt": [
+                "DatabaseCluster5B53A178",
+                "Endpoint.Address",
+              ],
+            },
+            ""]}'",
+          ],
+        ],
+      },
+    },
+    "LangfuseURL": {
+      "Description": "The URL of the Langfuse application",
+      "Export": {
+        "Name": "LangfuseURL",
+      },
+      "Value": "https://langfuse.example.com",
+    },
+  },
+  "Parameters": {
+    "BootstrapVersion": {
+      "Default": "/cdk-bootstrap/hnb659fds/version",
+      "Description": "Version of the CDK Bootstrap resources in this environment, automatically retrieved from SSM Parameter Store. [cdk:skip]",
+      "Type": "AWS::SSM::Parameter::Value<String>",
+    },
+    "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter": {
+      "Default": "/aws/service/ami-amazon-linux-latest/al2023-ami-kernel-6.1-arm64",
+      "Type": "AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>",
+    },
+  },
+  "Resources": {
+    "BastionBastionHostC769482C": {
+      "DependsOn": [
+        "BastionBastionHostInstanceRoleDefaultPolicy0656D7A5",
+        "BastionBastionHostInstanceRoleA4FC927C",
+      ],
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "BlockDeviceMappings": [
+          {
+            "DeviceName": "/dev/sdf",
+            "Ebs": {
+              "Encrypted": true,
+              "VolumeSize": 8,
+            },
+          },
+        ],
+        "IamInstanceProfile": {
+          "Ref": "BastionBastionHostInstanceProfileD0CDF457",
+        },
+        "ImageId": {
+          "Ref": "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter",
+        },
+        "InstanceType": "t4g.nano",
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "BastionBastionHostInstanceSecurityGroup7B0AF7B3",
+              "GroupId",
+            ],
+          },
+        ],
+        "SubnetId": {
+          "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "BastionHost",
+          },
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash",
+        },
+      },
+      "Type": "AWS::EC2::Instance",
+    },
+    "BastionBastionHostInstanceProfileD0CDF457": {
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "BastionBastionHostInstanceRoleA4FC927C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::InstanceProfile",
+    },
+    "BastionBastionHostInstanceRoleA4FC927C": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "BastionHost",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "BastionBastionHostInstanceRoleDefaultPolicy0656D7A5": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ssmmessages:*",
+                "ssm:UpdateInstanceInformation",
+                "ec2messages:*",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "BastionBastionHostInstanceRoleDefaultPolicy0656D7A5",
+        "Roles": [
+          {
+            "Ref": "BastionBastionHostInstanceRoleA4FC927C",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "BastionBastionHostInstanceSecurityGroup7B0AF7B3": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/Bastion/BastionHost/Resource/InstanceSecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "BastionHost",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "Bucket83908E77": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "BucketAutoDeleteObjectsCustomResourceBAFD23C2": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "BucketPolicyE9A3008A",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "Bucket83908E77",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "BucketPolicyE9A3008A": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "Bucket83908E77",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "s3:*",
+              "Condition": {
+                "Bool": {
+                  "aws:SecureTransport": "false",
+                },
+              },
+              "Effect": "Deny",
+              "Principal": {
+                "AWS": "*",
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Bucket83908E77",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Bucket83908E77",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Bucket83908E77",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Bucket83908E77",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "Cache18F6EE16": {
+      "Properties": {
+        "AtRestEncryptionEnabled": true,
+        "AutomaticFailoverEnabled": true,
+        "CacheNodeType": "cache.t4g.micro",
+        "CacheParameterGroupName": {
+          "Ref": "CacheRedisParameterGroup685451CE",
+        },
+        "CacheSubnetGroupName": {
+          "Ref": "CacheSubnetGroup355C216D",
+        },
+        "Engine": "Valkey",
+        "EngineVersion": "8.0",
+        "LogDeliveryConfigurations": [
+          {
+            "DestinationDetails": {
+              "CloudWatchLogsDetails": {
+                "LogGroup": {
+                  "Ref": "CacheLogGroup527D0E4F",
+                },
+              },
+            },
+            "DestinationType": "cloudwatch-logs",
+            "LogFormat": "json",
+            "LogType": "engine-log",
+          },
+        ],
+        "MultiAZEnabled": true,
+        "NumNodeGroups": 1,
+        "Port": 6379,
+        "ReplicasPerNodeGroup": 1,
+        "ReplicationGroupDescription": "Valkey Cache for Langfuse",
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "CacheSecurityGroup79A9F160",
+              "GroupId",
+            ],
+          },
+        ],
+        "TransitEncryptionEnabled": true,
+        "TransitEncryptionMode": "preferred",
+      },
+      "Type": "AWS::ElastiCache::ReplicationGroup",
+    },
+    "CacheLogGroup527D0E4F": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "RetentionInDays": 731,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CacheRedisParameterGroup685451CE": {
+      "Properties": {
+        "CacheParameterGroupFamily": "valkey8",
+        "Description": "Custom parameter group for Langfuse ElastiCache",
+        "Properties": {
+          "maxmemory-policy": "noeviction",
+        },
+      },
+      "Type": "AWS::ElastiCache::ParameterGroup",
+    },
+    "CacheSecurityGroup79A9F160": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/Cache/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "CacheSecurityGroupfromMyTestStackWebServiceSecurityGroup7B2F5D5963799A5307FA": {
+      "Properties": {
+        "Description": "from MyTestStackWebServiceSecurityGroup7B2F5D59:6379",
+        "FromPort": 6379,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "CacheSecurityGroup79A9F160",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "ToPort": 6379,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "CacheSecurityGroupfromMyTestStackWorkerServiceSecurityGroup4859B45B6379EA5D7905": {
+      "Properties": {
+        "Description": "from MyTestStackWorkerServiceSecurityGroup4859B45B:6379",
+        "FromPort": 6379,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "CacheSecurityGroup79A9F160",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WorkerServiceSecurityGroup31B1E69F",
+            "GroupId",
+          ],
+        },
+        "ToPort": 6379,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "CacheSubnetGroup355C216D": {
+      "Properties": {
+        "Description": "Subnet Group for Langfuse ElastiCache",
+        "SubnetIds": [
+          {
+            "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+          },
+          {
+            "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+          },
+        ],
+      },
+      "Type": "AWS::ElastiCache::SubnetGroup",
+    },
+    "ClickHouseClickhousePasswordA123CFFB": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 16,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ClickHouseEfsFileSystemCBBA2DEA": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Encrypted": true,
+        "FileSystemPolicy": {
+          "Statement": [
+            {
+              "Action": "elasticfilesystem:ClientMount",
+              "Condition": {
+                "Bool": {
+                  "elasticfilesystem:AccessedViaMountTarget": "true",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*",
+              },
+            },
+            {
+              "Action": [
+                "elasticfilesystem:ClientWrite",
+                "elasticfilesystem:ClientRootAccess",
+              ],
+              "Condition": {
+                "Bool": {
+                  "elasticfilesystem:AccessedViaMountTarget": "true",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": "*",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "FileSystemTags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/ClickHouse/EfsFileSystem",
+          },
+        ],
+        "LifecyclePolicies": [
+          {
+            "TransitionToIA": "AFTER_14_DAYS",
+          },
+        ],
+        "PerformanceMode": "generalPurpose",
+        "ThroughputMode": "bursting",
+      },
+      "Type": "AWS::EFS::FileSystem",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "ClickHouseEfsFileSystemEfsMountTarget1847F59EB": {
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "ClickHouseEfsFileSystemCBBA2DEA",
+        },
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "ClickHouseEfsFileSystemEfsSecurityGroupBD737BED",
+              "GroupId",
+            ],
+          },
+        ],
+        "SubnetId": {
+          "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+        },
+      },
+      "Type": "AWS::EFS::MountTarget",
+    },
+    "ClickHouseEfsFileSystemEfsMountTarget268232E9D": {
+      "Properties": {
+        "FileSystemId": {
+          "Ref": "ClickHouseEfsFileSystemCBBA2DEA",
+        },
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "ClickHouseEfsFileSystemEfsSecurityGroupBD737BED",
+              "GroupId",
+            ],
+          },
+        ],
+        "SubnetId": {
+          "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+        },
+      },
+      "Type": "AWS::EFS::MountTarget",
+    },
+    "ClickHouseEfsFileSystemEfsSecurityGroupBD737BED": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/ClickHouse/EfsFileSystem/EfsSecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/ClickHouse/EfsFileSystem",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "ClickHouseEfsFileSystemEfsSecurityGroupfromMyTestStackClickHouseSecurityGroupFC54B97820490F8CBFDD": {
+      "Properties": {
+        "Description": "from MyTestStackClickHouseSecurityGroupFC54B978:2049",
+        "FromPort": 2049,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ClickHouseEfsFileSystemEfsSecurityGroupBD737BED",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "ClickHouseSecurityGroup59709A3B",
+            "GroupId",
+          ],
+        },
+        "ToPort": 2049,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClickHouseSecurityGroup59709A3B": {
+      "Properties": {
+        "GroupDescription": "MyTestStack/ClickHouse/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "ClickHouseSecurityGroupfromMyTestStackWebServiceSecurityGroup7B2F5D598123C7AEBC02": {
+      "Properties": {
+        "Description": "from MyTestStackWebServiceSecurityGroup7B2F5D59:8123",
+        "FromPort": 8123,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ClickHouseSecurityGroup59709A3B",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "ToPort": 8123,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClickHouseSecurityGroupfromMyTestStackWebServiceSecurityGroup7B2F5D599000C0B32376": {
+      "Properties": {
+        "Description": "from MyTestStackWebServiceSecurityGroup7B2F5D59:9000",
+        "FromPort": 9000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ClickHouseSecurityGroup59709A3B",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "ToPort": 9000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClickHouseSecurityGroupfromMyTestStackWorkerServiceSecurityGroup4859B45B81237447B437": {
+      "Properties": {
+        "Description": "from MyTestStackWorkerServiceSecurityGroup4859B45B:8123",
+        "FromPort": 8123,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ClickHouseSecurityGroup59709A3B",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WorkerServiceSecurityGroup31B1E69F",
+            "GroupId",
+          ],
+        },
+        "ToPort": 8123,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClickHouseSecurityGroupfromMyTestStackWorkerServiceSecurityGroup4859B45B900005966752": {
+      "Properties": {
+        "Description": "from MyTestStackWorkerServiceSecurityGroup4859B45B:9000",
+        "FromPort": 9000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "ClickHouseSecurityGroup59709A3B",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WorkerServiceSecurityGroup31B1E69F",
+            "GroupId",
+          ],
+        },
+        "ToPort": 9000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "ClickHouseServiceCD2B94F8": {
+      "DependsOn": [
+        "ClickHouseTaskDefinitionTaskRoleDefaultPolicyE420E93C",
+        "ClickHouseTaskDefinitionTaskRole41536CE9",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "EnableECSManagedTags": false,
+        "EnableExecuteCommand": true,
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "ClickHouseSecurityGroup59709A3B",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+              },
+              {
+                "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+              },
+            ],
+          },
+        },
+        "ServiceConnectConfiguration": {
+          "Enabled": true,
+          "LogConfiguration": {
+            "LogDriver": "awslogs",
+            "Options": {
+              "awslogs-group": {
+                "Ref": "ClickHouseServiceLogGroup02E93F7A",
+              },
+              "awslogs-region": "us-east-1",
+              "awslogs-stream-prefix": "service-connect",
+            },
+          },
+          "Namespace": "local",
+          "Services": [
+            {
+              "ClientAliases": [
+                {
+                  "Port": 8123,
+                },
+              ],
+              "PortName": "clickhouse-http",
+            },
+            {
+              "ClientAliases": [
+                {
+                  "Port": 9000,
+                },
+              ],
+              "PortName": "clickhouse-tcp",
+            },
+          ],
+        },
+        "TaskDefinition": {
+          "Ref": "ClickHouseTaskDefinition42DC42D1",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "ClickHouseServiceLogGroup02E93F7A": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "ClickHouseTaskDefinitionTaskRoleDefaultPolicyE420E93C",
+        "ClickHouseTaskDefinitionTaskRole41536CE9",
+      ],
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ClickHouseTaskDefinition42DC42D1": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "CLICKHOUSE_DB",
+                "Value": "default",
+              },
+              {
+                "Name": "CLICKHOUSE_USER",
+                "Value": "clickhouse",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget --no-verbose --tries=1 --spider http://localhost:8123/ping || exit 1",
+              ],
+              "Interval": 5,
+              "Retries": 10,
+              "StartPeriod": 10,
+              "Timeout": 5,
+            },
+            "Image": "clickhouse/clickhouse-server:25.1",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ClickHouseTaskDefinitionContainerLogGroup512CAFCB",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "log",
+              },
+            },
+            "MountPoints": [
+              {
+                "ContainerPath": "/clickhouse",
+                "ReadOnly": false,
+                "SourceVolume": "clickhouse",
+              },
+            ],
+            "Name": "Container",
+            "PortMappings": [
+              {
+                "AppProtocol": "http",
+                "ContainerPort": 8123,
+                "HostPort": 8123,
+                "Name": "clickhouse-http",
+                "Protocol": "tcp",
+              },
+              {
+                "ContainerPort": 9000,
+                "HostPort": 9000,
+                "Name": "clickhouse-tcp",
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "CLICKHOUSE_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "ClickHouseClickhousePasswordA123CFFB",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "1024",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ClickHouseTaskDefinitionExecutionRole0586239A",
+            "Arn",
+          ],
+        },
+        "Family": "MyTestStackClickHouseTaskDefinition3CB4B9B6",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ClickHouseTaskDefinitionTaskRole41536CE9",
+            "Arn",
+          ],
+        },
+        "Volumes": [
+          {
+            "EFSVolumeConfiguration": {
+              "FilesystemId": {
+                "Ref": "ClickHouseEfsFileSystemCBBA2DEA",
+              },
+            },
+            "Name": "clickhouse",
+          },
+        ],
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "ClickHouseTaskDefinitionContainerLogGroup512CAFCB": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "ClickHouseTaskDefinitionExecutionRole0586239A": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ClickHouseTaskDefinitionExecutionRoleDefaultPolicy946E17AB": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ClickHouseTaskDefinitionContainerLogGroup512CAFCB",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "ClickHouseClickhousePasswordA123CFFB",
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ClickHouseServiceLogGroup02E93F7A",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ClickHouseTaskDefinitionExecutionRoleDefaultPolicy946E17AB",
+        "Roles": [
+          {
+            "Ref": "ClickHouseTaskDefinitionExecutionRole0586239A",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ClickHouseTaskDefinitionTaskRole41536CE9": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "ClickHouseTaskDefinitionTaskRoleDefaultPolicyE420E93C": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "elasticfilesystem:ClientMount",
+                "elasticfilesystem:ClientWrite",
+                "elasticfilesystem:ClientRootAccess",
+              ],
+              "Condition": {
+                "Bool": {
+                  "elasticfilesystem:AccessedViaMountTarget": "true",
+                },
+              },
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ClickHouseEfsFileSystemCBBA2DEA",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": "logs:DescribeLogGroups",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "ClickHouseTaskDefinitionTaskRoleDefaultPolicyE420E93C",
+        "Roles": [
+          {
+            "Ref": "ClickHouseTaskDefinitionTaskRole41536CE9",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "ClusterDefaultServiceDiscoveryNamespaceC336F9B4": {
+      "Properties": {
+        "Name": "local",
+        "Vpc": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::ServiceDiscovery::PrivateDnsNamespace",
+    },
+    "ClusterEB0386A7": {
+      "Properties": {
+        "ClusterSettings": [
+          {
+            "Name": "containerInsights",
+            "Value": "enabled",
+          },
+        ],
+        "ServiceConnectDefaults": {
+          "Namespace": {
+            "Fn::GetAtt": [
+              "ClusterDefaultServiceDiscoveryNamespaceC336F9B4",
+              "Arn",
+            ],
+          },
+        },
+      },
+      "Type": "AWS::ECS::Cluster",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
+      "DependsOn": [
+        "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "faa95a81ae7d7373f3e1f242268f904eb748d8d0fdd306e8a6fe515a1905a7d6.zip",
+        },
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Lambda function for auto-deleting objects in ",
+              {
+                "Ref": "Bucket83908E77",
+              },
+              " S3 bucket.",
+            ],
+          ],
+        },
+        "Handler": "index.handler",
+        "MemorySize": 128,
+        "Role": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 900,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Sub": "arn:\${AWS::Partition}:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "DatabaseCluster5B53A178": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "CopyTagsToSnapshot": true,
+        "DBClusterParameterGroupName": {
+          "Ref": "DatabaseParameterGroup2A921026",
+        },
+        "DBSubnetGroupName": {
+          "Ref": "DatabaseClusterSubnets5540150D",
+        },
+        "DatabaseName": "langfuse",
+        "EnableHttpEndpoint": true,
+        "Engine": "aurora-postgresql",
+        "EngineVersion": "16.6",
+        "MasterUserPassword": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "DatabaseClusterSecretD1FB634F",
+              },
+              ":SecretString:password::}}",
+            ],
+          ],
+        },
+        "MasterUsername": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "DatabaseClusterSecretD1FB634F",
+              },
+              ":SecretString:username::}}",
+            ],
+          ],
+        },
+        "Port": 5432,
+        "ServerlessV2ScalingConfiguration": {
+          "MaxCapacity": 2,
+          "MinCapacity": 0,
+        },
+        "StorageEncrypted": true,
+        "VpcSecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "DatabaseClusterSecurityGroupFEF1426A",
+              "GroupId",
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBCluster",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DatabaseClusterSecretAttachmentDC8466C0": {
+      "Properties": {
+        "SecretId": {
+          "Ref": "DatabaseClusterSecretD1FB634F",
+        },
+        "TargetId": {
+          "Ref": "DatabaseCluster5B53A178",
+        },
+        "TargetType": "AWS::RDS::DBCluster",
+      },
+      "Type": "AWS::SecretsManager::SecretTargetAttachment",
+    },
+    "DatabaseClusterSecretD1FB634F": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Description": {
+          "Fn::Join": [
+            "",
+            [
+              "Generated by the CDK for stack: ",
+              {
+                "Ref": "AWS::StackName",
+              },
+            ],
+          ],
+        },
+        "GenerateSecretString": {
+          "ExcludeCharacters": " %+~\`#$&*()|[]{}:;<>?!'/@"\\",
+          "GenerateStringKey": "password",
+          "PasswordLength": 30,
+          "SecretStringTemplate": "{"username":"postgres"}",
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DatabaseClusterSecurityGroupFEF1426A": {
+      "Properties": {
+        "GroupDescription": "RDS security group",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "DatabaseClusterSecurityGroupfromMyTestStackWebServiceSecurityGroup7B2F5D59IndirectPort82775F98": {
+      "Properties": {
+        "Description": "from MyTestStackWebServiceSecurityGroup7B2F5D59:{IndirectPort}",
+        "FromPort": {
+          "Fn::GetAtt": [
+            "DatabaseCluster5B53A178",
+            "Endpoint.Port",
+          ],
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "DatabaseClusterSecurityGroupFEF1426A",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "ToPort": {
+          "Fn::GetAtt": [
+            "DatabaseCluster5B53A178",
+            "Endpoint.Port",
+          ],
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "DatabaseClusterSecurityGroupfromMyTestStackWorkerServiceSecurityGroup4859B45BIndirectPort891AE10C": {
+      "Properties": {
+        "Description": "from MyTestStackWorkerServiceSecurityGroup4859B45B:{IndirectPort}",
+        "FromPort": {
+          "Fn::GetAtt": [
+            "DatabaseCluster5B53A178",
+            "Endpoint.Port",
+          ],
+        },
+        "GroupId": {
+          "Fn::GetAtt": [
+            "DatabaseClusterSecurityGroupFEF1426A",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WorkerServiceSecurityGroup31B1E69F",
+            "GroupId",
+          ],
+        },
+        "ToPort": {
+          "Fn::GetAtt": [
+            "DatabaseCluster5B53A178",
+            "Endpoint.Port",
+          ],
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "DatabaseClusterSubnets5540150D": {
+      "Properties": {
+        "DBSubnetGroupDescription": "Subnets for Cluster database",
+        "SubnetIds": [
+          {
+            "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+          },
+          {
+            "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+          },
+        ],
+      },
+      "Type": "AWS::RDS::DBSubnetGroup",
+    },
+    "DatabaseClusterWriterD43085C6": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "VPCPrivateSubnet1DefaultRouteAE1D6490",
+        "VPCPrivateSubnet1RouteTableAssociation347902D1",
+        "VPCPrivateSubnet2DefaultRouteF4F5CFD2",
+        "VPCPrivateSubnet2RouteTableAssociation0C73D413",
+      ],
+      "Properties": {
+        "AutoMinorVersionUpgrade": true,
+        "DBClusterIdentifier": {
+          "Ref": "DatabaseCluster5B53A178",
+        },
+        "DBInstanceClass": "db.serverless",
+        "Engine": "aurora-postgresql",
+        "PromotionTier": 0,
+        "PubliclyAccessible": false,
+      },
+      "Type": "AWS::RDS::DBInstance",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "DatabaseParameterGroup2A921026": {
+      "Properties": {
+        "Description": "Cluster parameter group for aurora-postgresql16",
+        "Family": "aurora-postgresql16",
+        "Parameters": {
+          "idle_session_timeout": "60000",
+        },
+      },
+      "Type": "AWS::RDS::DBClusterParameterGroup",
+    },
+    "EncryptionKey1B843E66": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludeCharacters": "ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+=-[]{};:,.<>?/",
+          "ExcludePunctuation": true,
+          "ExcludeUppercase": true,
+          "PasswordLength": 64,
+          "RequireEachIncludedType": false,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "SaltDBAE3CEC": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 32,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "VPCB9E5F0B4": {
+      "Properties": {
+        "CidrBlock": "10.0.0.0/16",
+        "EnableDnsHostnames": true,
+        "EnableDnsSupport": true,
+        "InstanceTenancy": "default",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::VPC",
+    },
+    "VPCIGWB7E252D3": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::InternetGateway",
+    },
+    "VPCPrivateSubnet1DefaultRouteAE1D6490": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "VPCPublicSubnet1NATGatewayE0556630",
+        },
+        "RouteTableId": {
+          "Ref": "VPCPrivateSubnet1RouteTableBE8A6027",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VPCPrivateSubnet1RouteTableAssociation347902D1": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VPCPrivateSubnet1RouteTableBE8A6027",
+        },
+        "SubnetId": {
+          "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VPCPrivateSubnet1RouteTableBE8A6027": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VPCPrivateSubnet1Subnet8BCA10E0": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.2.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PrivateSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VPCPrivateSubnet2DefaultRouteF4F5CFD2": {
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "NatGatewayId": {
+          "Ref": "VPCPublicSubnet2NATGateway3C070193",
+        },
+        "RouteTableId": {
+          "Ref": "VPCPrivateSubnet2RouteTable0A19E10E",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VPCPrivateSubnet2RouteTable0A19E10E": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VPCPrivateSubnet2RouteTableAssociation0C73D413": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VPCPrivateSubnet2RouteTable0A19E10E",
+        },
+        "SubnetId": {
+          "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VPCPrivateSubnet2SubnetCFCDAA7A": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.3.0/24",
+        "MapPublicIpOnLaunch": false,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Private",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Private",
+          },
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PrivateSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VPCPublicSubnet1DefaultRoute91CEF279": {
+      "DependsOn": [
+        "VPCVPCGW99B986DC",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "VPCIGWB7E252D3",
+        },
+        "RouteTableId": {
+          "Ref": "VPCPublicSubnet1RouteTableFEE4B781",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VPCPublicSubnet1EIP6AD938E8": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "VPCPublicSubnet1NATGatewayE0556630": {
+      "DependsOn": [
+        "VPCPublicSubnet1DefaultRoute91CEF279",
+        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "VPCPublicSubnet1EIP6AD938E8",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "VPCPublicSubnet1SubnetB4246D30",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet1",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "VPCPublicSubnet1RouteTableAssociation0B0896DC": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VPCPublicSubnet1RouteTableFEE4B781",
+        },
+        "SubnetId": {
+          "Ref": "VPCPublicSubnet1SubnetB4246D30",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VPCPublicSubnet1RouteTableFEE4B781": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VPCPublicSubnet1SubnetB4246D30": {
+      "Properties": {
+        "AvailabilityZone": "dummy1a",
+        "CidrBlock": "10.0.0.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VPCPublicSubnet2DefaultRouteB7481BBA": {
+      "DependsOn": [
+        "VPCVPCGW99B986DC",
+      ],
+      "Properties": {
+        "DestinationCidrBlock": "0.0.0.0/0",
+        "GatewayId": {
+          "Ref": "VPCIGWB7E252D3",
+        },
+        "RouteTableId": {
+          "Ref": "VPCPublicSubnet2RouteTable6F1A15F1",
+        },
+      },
+      "Type": "AWS::EC2::Route",
+    },
+    "VPCPublicSubnet2EIP4947BC00": {
+      "Properties": {
+        "Domain": "vpc",
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet2",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::EIP",
+    },
+    "VPCPublicSubnet2NATGateway3C070193": {
+      "DependsOn": [
+        "VPCPublicSubnet2DefaultRouteB7481BBA",
+        "VPCPublicSubnet2RouteTableAssociation5A808732",
+      ],
+      "Properties": {
+        "AllocationId": {
+          "Fn::GetAtt": [
+            "VPCPublicSubnet2EIP4947BC00",
+            "AllocationId",
+          ],
+        },
+        "SubnetId": {
+          "Ref": "VPCPublicSubnet2Subnet74179F39",
+        },
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet2",
+          },
+        ],
+      },
+      "Type": "AWS::EC2::NatGateway",
+    },
+    "VPCPublicSubnet2RouteTable6F1A15F1": {
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::RouteTable",
+    },
+    "VPCPublicSubnet2RouteTableAssociation5A808732": {
+      "Properties": {
+        "RouteTableId": {
+          "Ref": "VPCPublicSubnet2RouteTable6F1A15F1",
+        },
+        "SubnetId": {
+          "Ref": "VPCPublicSubnet2Subnet74179F39",
+        },
+      },
+      "Type": "AWS::EC2::SubnetRouteTableAssociation",
+    },
+    "VPCPublicSubnet2Subnet74179F39": {
+      "Properties": {
+        "AvailabilityZone": "dummy1b",
+        "CidrBlock": "10.0.1.0/24",
+        "MapPublicIpOnLaunch": true,
+        "Tags": [
+          {
+            "Key": "aws-cdk:subnet-name",
+            "Value": "Public",
+          },
+          {
+            "Key": "aws-cdk:subnet-type",
+            "Value": "Public",
+          },
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet2",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::Subnet",
+    },
+    "VPCVPCGW99B986DC": {
+      "Properties": {
+        "InternetGatewayId": {
+          "Ref": "VPCIGWB7E252D3",
+        },
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::VPCGatewayAttachment",
+    },
+    "WebAlbAccessLogBucket0735D737": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WebAlbAccessLogBucketAutoDeleteObjectsCustomResource868977E0": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "WebAlbAccessLogBucketPolicy7A6A77A0",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "WebAlbAccessLogBucket0735D737",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WebAlbAccessLogBucketPolicy7A6A77A0": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "WebAlbAccessLogBucket0735D737",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "WebAlbAccessLogBucket0735D737",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "WebAlbAccessLogBucket0735D737",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::127311923021:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "WebAlbAccessLogBucket0735D737",
+                        "Arn",
+                      ],
+                    },
+                    "/AlbAccessLogs/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "WebAlbAccessLogBucket0735D737",
+                        "Arn",
+                      ],
+                    },
+                    "/AlbAccessLogs/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WebAlbAccessLogBucket0735D737",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "WebAliasRecord22320298": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::Join": [
+              "",
+              [
+                "dualstack.",
+                {
+                  "Fn::GetAtt": [
+                    "WebApplicationLoadBalancerCC36E523",
+                    "DNSName",
+                  ],
+                },
+              ],
+            ],
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "WebApplicationLoadBalancerCC36E523",
+              "CanonicalHostedZoneID",
+            ],
+          },
+        },
+        "HostedZoneId": "DUMMY",
+        "Name": "langfuse.example.com.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
+    "WebApplicationLoadBalancerCC36E523": {
+      "DependsOn": [
+        "VPCPublicSubnet1DefaultRoute91CEF279",
+        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
+        "VPCPublicSubnet2DefaultRouteB7481BBA",
+        "VPCPublicSubnet2RouteTableAssociation5A808732",
+        "WebAlbAccessLogBucketPolicy7A6A77A0",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+          {
+            "Key": "access_logs.s3.enabled",
+            "Value": "true",
+          },
+          {
+            "Key": "access_logs.s3.bucket",
+            "Value": {
+              "Ref": "WebAlbAccessLogBucket0735D737",
+            },
+          },
+          {
+            "Key": "access_logs.s3.prefix",
+            "Value": "AlbAccessLogs",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "WebApplicationLoadBalancerSecurityGroup1DF02136",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "VPCPublicSubnet1SubnetB4246D30",
+          },
+          {
+            "Ref": "VPCPublicSubnet2Subnet74179F39",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "WebApplicationLoadBalancerListenerD48857F0": {
+      "Properties": {
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "WebCertificateDA5CDDF6",
+            },
+          },
+        ],
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "WebTargetGroupFE6444AE",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "WebApplicationLoadBalancerCC36E523",
+        },
+        "Port": 443,
+        "Protocol": "HTTPS",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "WebApplicationLoadBalancerSecurityGroup1DF02136": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MyTestStackWebApplicationLoadBalancerD12C7144",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:443",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443,
+          },
+          {
+            "CidrIpv6": "::/0",
+            "Description": "from ::/0:443",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443,
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "WebApplicationLoadBalancerSecurityGrouptoMyTestStackWebServiceSecurityGroup7B2F5D5930006854D40B": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "WebApplicationLoadBalancerSecurityGroup1DF02136",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "WebCertificateDA5CDDF6": {
+      "Properties": {
+        "DomainName": "langfuse.example.com",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "langfuse.example.com",
+            "HostedZoneId": "DUMMY",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/Web/Certificate",
+          },
+        ],
+        "ValidationMethod": "DNS",
+      },
+      "Type": "AWS::CertificateManager::Certificate",
+    },
+    "WebNextAuthSecretB20A2FF1": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 32,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WebServiceD04B5F3E": {
+      "DependsOn": [
+        "WebApplicationLoadBalancerListenerD48857F0",
+        "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
+        "WebTaskDefinitionTaskRole96791EDD",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "EnableECSManagedTags": false,
+        "EnableExecuteCommand": true,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "Container",
+            "ContainerPort": 3000,
+            "TargetGroupArn": {
+              "Ref": "WebTargetGroupFE6444AE",
+            },
+          },
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "WebServiceSecurityGroupBAF50CC8",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+              },
+              {
+                "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+              },
+            ],
+          },
+        },
+        "ServiceConnectConfiguration": {
+          "Enabled": true,
+          "LogConfiguration": {
+            "LogDriver": "awslogs",
+            "Options": {
+              "awslogs-group": {
+                "Ref": "WebServiceLogGroupA2D9C8E4",
+              },
+              "awslogs-region": "us-east-1",
+              "awslogs-stream-prefix": "service-connect",
+            },
+          },
+          "Namespace": "local",
+        },
+        "TaskDefinition": {
+          "Ref": "WebTaskDefinitionD1709B1C",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "WebServiceLogGroupA2D9C8E4": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
+        "WebTaskDefinitionTaskRole96791EDD",
+      ],
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "WebServiceSecurityGroupBAF50CC8": {
+      "DependsOn": [
+        "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
+        "WebTaskDefinitionTaskRole96791EDD",
+      ],
+      "Properties": {
+        "GroupDescription": "MyTestStack/Web/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "WebServiceSecurityGroupfromMyTestStackWebApplicationLoadBalancerSecurityGroupE7B4C1F43000D14BA60E": {
+      "DependsOn": [
+        "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
+        "WebTaskDefinitionTaskRole96791EDD",
+      ],
+      "Properties": {
+        "Description": "Load balancer to target",
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebApplicationLoadBalancerSecurityGroup1DF02136",
+            "GroupId",
+          ],
+        },
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
+    },
+    "WebTargetGroupFE6444AE": {
+      "Properties": {
+        "HealthCheckIntervalSeconds": 20,
+        "HealthyThresholdCount": 2,
+        "Matcher": {
+          "HttpCode": "200-299,307",
+        },
+        "Port": 3000,
+        "Protocol": "HTTP",
+        "TargetGroupAttributes": [
+          {
+            "Key": "deregistration_delay.timeout_seconds",
+            "Value": "10",
+          },
+          {
+            "Key": "stickiness.enabled",
+            "Value": "false",
+          },
+        ],
+        "TargetType": "ip",
+        "UnhealthyThresholdCount": 6,
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+    },
+    "WebTaskDefinitionContainerLogGroup1A6234CC": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "WebTaskDefinitionD1709B1C": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "NEXTAUTH_URL",
+                "Value": "https://langfuse.example.com",
+              },
+              {
+                "Name": "TELEMETRY_ENABLED",
+                "Value": "true",
+              },
+              {
+                "Name": "LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES",
+                "Value": "true",
+              },
+              {
+                "Name": "HOSTNAME",
+                "Value": "0.0.0.0",
+              },
+              {
+                "Name": "LANGFUSE_LOG_LEVEL",
+                "Value": "trace",
+              },
+              {
+                "Name": "DATABASE_NAME",
+                "Value": "langfuse",
+              },
+              {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Cache18F6EE16",
+                    "PrimaryEndPoint.Address",
+                  ],
+                },
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379",
+              },
+              {
+                "Name": "REDIS_AUTH",
+              },
+              {
+                "Name": "CLICKHOUSE_MIGRATION_URL",
+                "Value": "clickhouse://clickhouse-tcp.local:9000",
+              },
+              {
+                "Name": "CLICKHOUSE_URL",
+                "Value": "http://clickhouse-http.local:8123",
+              },
+              {
+                "Name": "CLICKHOUSE_USER",
+                "Value": "clickhouse",
+              },
+              {
+                "Name": "CLICKHOUSE_CLUSTER_ENABLED",
+                "Value": "false",
+              },
+              {
+                "Name": "LANGFUSE_S3_EVENT_UPLOAD_BUCKET",
+                "Value": {
+                  "Ref": "Bucket83908E77",
+                },
+              },
+              {
+                "Name": "LANGFUSE_S3_EVENT_UPLOAD_PREFIX",
+                "Value": "events/",
+              },
+              {
+                "Name": "LANGFUSE_S3_MEDIA_UPLOAD_BUCKET",
+                "Value": {
+                  "Ref": "Bucket83908E77",
+                },
+              },
+              {
+                "Name": "LANGFUSE_S3_MEDIA_UPLOAD_PREFIX",
+                "Value": "media/",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1",
+              ],
+              "Interval": 15,
+              "Retries": 3,
+              "StartPeriod": 30,
+              "Timeout": 5,
+            },
+            "Image": "langfuse/langfuse:3",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "WebTaskDefinitionContainerLogGroup1A6234CC",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "log",
+              },
+            },
+            "Name": "Container",
+            "PortMappings": [
+              {
+                "ContainerPort": 3000,
+                "Name": "web",
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "NEXTAUTH_SECRET",
+                "ValueFrom": {
+                  "Ref": "WebNextAuthSecretB20A2FF1",
+                },
+              },
+              {
+                "Name": "SALT",
+                "ValueFrom": {
+                  "Ref": "SaltDBAE3CEC",
+                },
+              },
+              {
+                "Name": "ENCRYPTION_KEY",
+                "ValueFrom": {
+                  "Ref": "EncryptionKey1B843E66",
+                },
+              },
+              {
+                "Name": "DATABASE_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+                      },
+                      ":host::",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "DATABASE_USERNAME",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+                      },
+                      ":username::",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "DATABASE_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+                      },
+                      ":password::",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "CLICKHOUSE_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "ClickHouseClickhousePasswordA123CFFB",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "1024",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "WebTaskDefinitionExecutionRole9B66D88D",
+            "Arn",
+          ],
+        },
+        "Family": "MyTestStackWebTaskDefinition8428B33B",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "WebTaskDefinitionTaskRole96791EDD",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "WebTaskDefinitionExecutionRole9B66D88D": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WebTaskDefinitionExecutionRoleDefaultPolicy79D98D92": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WebTaskDefinitionContainerLogGroup1A6234CC",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "WebNextAuthSecretB20A2FF1",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "SaltDBAE3CEC",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "EncryptionKey1B843E66",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "ClickHouseClickhousePasswordA123CFFB",
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WebServiceLogGroupA2D9C8E4",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "WebTaskDefinitionExecutionRoleDefaultPolicy79D98D92",
+        "Roles": [
+          {
+            "Ref": "WebTaskDefinitionExecutionRole9B66D88D",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "WebTaskDefinitionTaskRole96791EDD": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Bucket83908E77",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Bucket83908E77",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": "logs:DescribeLogGroups",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
+        "Roles": [
+          {
+            "Ref": "WebTaskDefinitionTaskRole96791EDD",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "WorkerService3F60922A": {
+      "DependsOn": [
+        "WorkerTaskDefinitionTaskRoleDefaultPolicy45DB26E7",
+        "WorkerTaskDefinitionTaskRoleDCDA51F5",
+      ],
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterEB0386A7",
+        },
+        "DeploymentConfiguration": {
+          "Alarms": {
+            "AlarmNames": [],
+            "Enable": false,
+            "Rollback": false,
+          },
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50,
+        },
+        "EnableECSManagedTags": false,
+        "EnableExecuteCommand": true,
+        "LaunchType": "FARGATE",
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "WorkerServiceSecurityGroup31B1E69F",
+                  "GroupId",
+                ],
+              },
+            ],
+            "Subnets": [
+              {
+                "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
+              },
+              {
+                "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
+              },
+            ],
+          },
+        },
+        "ServiceConnectConfiguration": {
+          "Enabled": true,
+          "LogConfiguration": {
+            "LogDriver": "awslogs",
+            "Options": {
+              "awslogs-group": {
+                "Ref": "WorkerServiceLogGroupE0F64321",
+              },
+              "awslogs-region": "us-east-1",
+              "awslogs-stream-prefix": "service-connect",
+            },
+          },
+          "Namespace": "local",
+        },
+        "TaskDefinition": {
+          "Ref": "WorkerTaskDefinitionC7EEADA6",
+        },
+      },
+      "Type": "AWS::ECS::Service",
+    },
+    "WorkerServiceLogGroupE0F64321": {
+      "DeletionPolicy": "Retain",
+      "DependsOn": [
+        "WorkerTaskDefinitionTaskRoleDefaultPolicy45DB26E7",
+        "WorkerTaskDefinitionTaskRoleDCDA51F5",
+      ],
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "WorkerServiceSecurityGroup31B1E69F": {
+      "DependsOn": [
+        "WorkerTaskDefinitionTaskRoleDefaultPolicy45DB26E7",
+        "WorkerTaskDefinitionTaskRoleDCDA51F5",
+      ],
+      "Properties": {
+        "GroupDescription": "MyTestStack/Worker/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "WorkerTaskDefinitionC7EEADA6": {
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Environment": [
+              {
+                "Name": "TELEMETRY_ENABLED",
+                "Value": "true",
+              },
+              {
+                "Name": "LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES",
+                "Value": "true",
+              },
+              {
+                "Name": "LANGFUSE_LOG_LEVEL",
+                "Value": "trace",
+              },
+              {
+                "Name": "DATABASE_NAME",
+                "Value": "langfuse",
+              },
+              {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Cache18F6EE16",
+                    "PrimaryEndPoint.Address",
+                  ],
+                },
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379",
+              },
+              {
+                "Name": "REDIS_AUTH",
+              },
+              {
+                "Name": "CLICKHOUSE_MIGRATION_URL",
+                "Value": "clickhouse://clickhouse-tcp.local:9000",
+              },
+              {
+                "Name": "CLICKHOUSE_URL",
+                "Value": "http://clickhouse-http.local:8123",
+              },
+              {
+                "Name": "CLICKHOUSE_USER",
+                "Value": "clickhouse",
+              },
+              {
+                "Name": "CLICKHOUSE_CLUSTER_ENABLED",
+                "Value": "false",
+              },
+              {
+                "Name": "LANGFUSE_S3_EVENT_UPLOAD_BUCKET",
+                "Value": {
+                  "Ref": "Bucket83908E77",
+                },
+              },
+              {
+                "Name": "LANGFUSE_S3_EVENT_UPLOAD_PREFIX",
+                "Value": "events/",
+              },
+              {
+                "Name": "LANGFUSE_S3_MEDIA_UPLOAD_BUCKET",
+                "Value": {
+                  "Ref": "Bucket83908E77",
+                },
+              },
+              {
+                "Name": "LANGFUSE_S3_MEDIA_UPLOAD_PREFIX",
+                "Value": "media/",
+              },
+            ],
+            "Essential": true,
+            "HealthCheck": {
+              "Command": [
+                "CMD-SHELL",
+                "wget --no-verbose --tries=1 --spider http://localhost:3030/ || exit 1",
+              ],
+              "Interval": 15,
+              "Retries": 3,
+              "StartPeriod": 30,
+              "Timeout": 5,
+            },
+            "Image": "langfuse/langfuse-worker:3",
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "WorkerTaskDefinitionContainerLogGroupDB8BC8BC",
+                },
+                "awslogs-region": "us-east-1",
+                "awslogs-stream-prefix": "log",
+              },
+            },
+            "Name": "Container",
+            "PortMappings": [
+              {
+                "ContainerPort": 3030,
+                "Name": "worker",
+                "Protocol": "tcp",
+              },
+            ],
+            "Secrets": [
+              {
+                "Name": "DATABASE_HOST",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+                      },
+                      ":host::",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "DATABASE_USERNAME",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+                      },
+                      ":username::",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "DATABASE_PASSWORD",
+                "ValueFrom": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+                      },
+                      ":password::",
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "SALT",
+                "ValueFrom": {
+                  "Ref": "SaltDBAE3CEC",
+                },
+              },
+              {
+                "Name": "ENCRYPTION_KEY",
+                "ValueFrom": {
+                  "Ref": "EncryptionKey1B843E66",
+                },
+              },
+              {
+                "Name": "CLICKHOUSE_PASSWORD",
+                "ValueFrom": {
+                  "Ref": "ClickHouseClickhousePasswordA123CFFB",
+                },
+              },
+            ],
+          },
+        ],
+        "Cpu": "1024",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "WorkerTaskDefinitionExecutionRole04BD42F4",
+            "Arn",
+          ],
+        },
+        "Family": "MyTestStackWorkerTaskDefinition957E58DF",
+        "Memory": "2048",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE",
+        ],
+        "RuntimePlatform": {
+          "CpuArchitecture": "X86_64",
+        },
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "WorkerTaskDefinitionTaskRoleDCDA51F5",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "AWS::ECS::TaskDefinition",
+    },
+    "WorkerTaskDefinitionContainerLogGroupDB8BC8BC": {
+      "DeletionPolicy": "Retain",
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+    },
+    "WorkerTaskDefinitionExecutionRole04BD42F4": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WorkerTaskDefinitionExecutionRoleDefaultPolicy32BEDE20": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkerTaskDefinitionContainerLogGroupDB8BC8BC",
+                  "Arn",
+                ],
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "SaltDBAE3CEC",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "EncryptionKey1B843E66",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "ClickHouseClickhousePasswordA123CFFB",
+              },
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WorkerServiceLogGroupE0F64321",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "WorkerTaskDefinitionExecutionRoleDefaultPolicy32BEDE20",
+        "Roles": [
+          {
+            "Ref": "WorkerTaskDefinitionExecutionRole04BD42F4",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "WorkerTaskDefinitionTaskRoleDCDA51F5": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::IAM::Role",
+    },
+    "WorkerTaskDefinitionTaskRoleDefaultPolicy45DB26E7": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:GetObject*",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+                "s3:PutObject",
+                "s3:PutObjectLegalHold",
+                "s3:PutObjectRetention",
+                "s3:PutObjectTagging",
+                "s3:PutObjectVersionTagging",
+                "s3:Abort*",
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "Bucket83908E77",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "Bucket83908E77",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": [
+                "ssmmessages:CreateControlChannel",
+                "ssmmessages:CreateDataChannel",
+                "ssmmessages:OpenControlChannel",
+                "ssmmessages:OpenDataChannel",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": "logs:DescribeLogGroups",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:DescribeLogStreams",
+                "logs:PutLogEvents",
+              ],
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "WorkerTaskDefinitionTaskRoleDefaultPolicy45DB26E7",
+        "Roles": [
+          {
+            "Ref": "WorkerTaskDefinitionTaskRoleDCDA51F5",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+  },
+  "Rules": {
+    "CheckBootstrapVersion": {
+      "Assertions": [
+        {
+          "Assert": {
+            "Fn::Not": [
+              {
+                "Fn::Contains": [
+                  [
+                    "1",
+                    "2",
+                    "3",
+                    "4",
+                    "5",
+                  ],
+                  {
+                    "Ref": "BootstrapVersion",
+                  },
+                ],
+              },
+            ],
+          },
+          "AssertDescription": "CDK bootstrap stack version 6 required. Please run 'cdk bootstrap' with a recent version of the CDK CLI.",
+        },
+      ],
+    },
+  },
+}
+`;
