@@ -21,6 +21,8 @@ const stack = new LangfuseWithAwsCdkStack(app, `LangfuseWithAwsCdkStack-${envNam
     region: appConfig.env?.region ?? process.env.CDK_DEFAULT_REGION,
   },
   envName,
+  hostName: appConfig.domainConfig?.hostName,
+  domainName: appConfig.domainConfig?.domainName,
 });
 
 cdk.Tags.of(stack).add('Environment', envName);

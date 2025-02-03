@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`snapshot test 1`] = `
+exports[`snapshot test for prod 1`] = `
 {
   "Outputs": {
     "BastionBastionHostBastionHostIdE6364C04": {
@@ -375,7 +375,7 @@ exports[`snapshot test 1`] = `
     "Cache18F6EE16": {
       "Properties": {
         "AtRestEncryptionEnabled": true,
-        "AutomaticFailoverEnabled": true,
+        "AutomaticFailoverEnabled": false,
         "CacheNodeType": "cache.t4g.micro",
         "CacheParameterGroupName": {
           "Ref": "CacheRedisParameterGroup685451CE",
@@ -399,10 +399,10 @@ exports[`snapshot test 1`] = `
             "LogType": "engine-log",
           },
         ],
-        "MultiAZEnabled": true,
+        "MultiAZEnabled": false,
         "NumNodeGroups": 1,
         "Port": 6379,
-        "ReplicasPerNodeGroup": 1,
+        "ReplicasPerNodeGroup": 0,
         "ReplicationGroupDescription": "Valkey Cache for Langfuse",
         "SecurityGroupIds": [
           {
@@ -866,7 +866,7 @@ exports[`snapshot test 1`] = `
               "StartPeriod": 10,
               "Timeout": 5,
             },
-            "Image": "clickhouse/clickhouse-server:25.1",
+            "Image": "clickhouse/clickhouse-server:latest",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -1220,7 +1220,7 @@ exports[`snapshot test 1`] = `
         "Port": 5432,
         "ServerlessV2ScalingConfiguration": {
           "MaxCapacity": 2,
-          "MinCapacity": 0,
+          "MinCapacity": 0.5,
         },
         "StorageEncrypted": true,
         "VpcSecurityGroupIds": [
@@ -2300,7 +2300,7 @@ exports[`snapshot test 1`] = `
               },
               {
                 "Name": "LANGFUSE_LOG_LEVEL",
-                "Value": "trace",
+                "Value": "info",
               },
               {
                 "Name": "DATABASE_NAME",
@@ -2370,7 +2370,7 @@ exports[`snapshot test 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3",
+            "Image": "langfuse/langfuse:latest",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2793,7 +2793,7 @@ exports[`snapshot test 1`] = `
               },
               {
                 "Name": "LANGFUSE_LOG_LEVEL",
-                "Value": "trace",
+                "Value": "info",
               },
               {
                 "Name": "DATABASE_NAME",
@@ -2863,7 +2863,7 @@ exports[`snapshot test 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3",
+            "Image": "langfuse/langfuse-worker:latest",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {

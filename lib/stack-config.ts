@@ -1,12 +1,5 @@
 export interface StackConfig {
   /**
-   * Custom domain settings for Langfuse Application.
-   *
-   * @default - Use HTTP if not specified.
-   */
-  domainConfig?: DomainConfig;
-
-  /**
    * List of allowed IPv4 CIDR blocks for accessing the Langfuse Application.
    *
    * @default - '0.0.0.0/0'
@@ -64,19 +57,6 @@ export interface StackConfig {
   cacheMultiAz?: boolean;
 }
 
-export interface DomainConfig {
-  /**
-   * The hostname for the Langfuse Application (e.g., 'app' for 'app.example.com').
-   */
-  hostName: string;
-
-  /**
-   * The Route 53 domain name for the Langfuse Application (e.g., 'example.com').
-   * This is used to construct the full domain (e.g., 'app.example.com').
-   */
-  domainName: string;
-}
-
 export enum LOG_LEVEL {
   TRACE = 'trace',
   DEBUG = 'debug',
@@ -86,7 +66,6 @@ export enum LOG_LEVEL {
   FATL = 'fatal',
 }
 
-// 環境名を型として定義
 const stackConfigMap: Record<string, StackConfig> = {
   dev: {
     createBastion: true,
@@ -105,22 +84,6 @@ const stackConfigMap: Record<string, StackConfig> = {
     langfuseImageTag: 'latest',
     auroraScalesToZero: false,
     cacheMultiAz: false,
-    domainConfig: {
-      hostName: 'langfuse',
-      domainName: 'example.com',
-    },
-  },
-  'for-snapshot-test': {
-    createBastion: true,
-    langfuseLogLevel: LOG_LEVEL.TRACE,
-    langfuseImageTag: '3',
-    clickhouseImageTag: '25.1',
-    auroraScalesToZero: true,
-    cacheMultiAz: true,
-    domainConfig: {
-      hostName: 'langfuse',
-      domainName: 'example.com',
-    },
   },
 };
 

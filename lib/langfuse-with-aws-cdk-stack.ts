@@ -15,13 +15,15 @@ import { Bastion } from './constructs/bastion';
 
 export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   envName: string;
+  hostName?: string;
+  domainName?: string;
 }
 
 export class LangfuseWithAwsCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LangfuseWithAwsCdkStackProps) {
     super(scope, id, props);
 
-    const { envName } = props;
+    const { envName, hostName, domainName } = props;
 
     /**
      * Configurations
@@ -123,8 +125,8 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
      * Fargate Service (Langfuse Web)
      */
     const web = new Web(this, 'Web', {
-      domainName: stackConfig.domainConfig?.domainName,
-      hostName: stackConfig.domainConfig?.hostName,
+      hostName: hostName,
+      domainName: domainName,
       vpc,
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,

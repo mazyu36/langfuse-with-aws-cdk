@@ -8,6 +8,26 @@ export interface AppConfig {
    * @default - use CDK_DEFAULT_ACCOUNT and CDK_DEFAULT_REGION
    */
   env?: Environment;
+
+  /**
+   * Custom domain settings for Langfuse Application.
+   *
+   * @default - Use HTTP if not specified.
+   */
+  domainConfig?: DomainConfig;
+}
+
+export interface DomainConfig {
+  /**
+   * The hostname for the Langfuse Application (e.g., 'app' for 'app.example.com').
+   */
+  hostName: string;
+
+  /**
+   * The Route 53 domain name for the Langfuse Application (e.g., 'example.com').
+   * This is used to construct the full domain (e.g., 'app.example.com').
+   */
+  domainName: string;
 }
 
 const appConfigMap: Record<string, AppConfig> = {
@@ -27,6 +47,10 @@ const appConfigMap: Record<string, AppConfig> = {
     env: {
       // account: '123456789012',
       region: 'us-east-1',
+    },
+    domainConfig: {
+      hostName: 'langfuse',
+      domainName: 'example.com',
     },
   },
 };

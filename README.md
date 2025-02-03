@@ -20,9 +20,9 @@ Ensure you have Node.js, npm, and the AWS CDK CLI installed.
 ## Usage
 
 ### 1. **Set Configuration Properties**
-Modify the following configuration files:
-   * [`/bin/app-config.ts`](/bin/app-config.ts): AWS infrastructure configurations (e.g., AWS Account ID, Region)
-   * [`/lib/stack-config.ts`](/lib/stack-config.ts): AWS infrastructure and Langfuse service configurations
+Please modify the following configuration files:
+   * [`/bin/app-config.ts`](/bin/app-config.ts): Environment parameters (including AWS Account ID, Region, and Domain).
+   * [`/lib/stack-config.ts`](/lib/stack-config.ts):  Parameters for AWS Resources and Langfuse Services.
 
 ### 2. **Deploy**
 Run the following commands to deploy your stack:
