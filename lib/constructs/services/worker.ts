@@ -47,10 +47,6 @@ export class Worker extends Construct {
 
         DATABASE_NAME: database.databaseName,
 
-        REDIS_HOST: cache.endpoint,
-        REDIS_PORT: cache.port.toString(),
-        REDIS_AUTH: cache.token,
-
         CLICKHOUSE_MIGRATION_URL: 'clickhouse://clickhouse-tcp.local:9000',
         CLICKHOUSE_URL: 'http://clickhouse-http.local:8123',
         CLICKHOUSE_USER: clickhouse.clickhouseUser,
@@ -62,11 +58,14 @@ export class Worker extends Construct {
         LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: 'media/',
       },
       secrets: {
+        SALT: ecs.Secret.fromSecretsManager(salt),
+        ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKey),
+
         DATABASE_HOST: ecs.Secret.fromSecretsManager(database.secret, 'host'),
         DATABASE_USERNAME: ecs.Secret.fromSecretsManager(database.secret, 'username'),
         DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(database.secret, 'password'),
-        SALT: ecs.Secret.fromSecretsManager(salt),
-        ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKey),
+
+        REDIS_CONNECTION_STRING: ecs.Secret.fromSecretsManager(cache.connectionStringSecret),
 
         CLICKHOUSE_PASSWORD: ecs.Secret.fromSecretsManager(clickhouse.clickhousePassword),
       },

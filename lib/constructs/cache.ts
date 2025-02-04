@@ -2,7 +2,8 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as elasticache from 'aws-cdk-lib/aws-elasticache';
 import * as logs from 'aws-cdk-lib/aws-logs';
-import { RemovalPolicy } from 'aws-cdk-lib';
+import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
+import { RemovalPolicy, SecretValue } from 'aws-cdk-lib';
 
 export interface CacheProps {
   vpc: ec2.IVpc;
@@ -10,15 +11,15 @@ export interface CacheProps {
 }
 
 export class Cache extends Construct implements ec2.IConnectable {
-  public readonly endpoint: string;
   public readonly connections: ec2.Connections;
-  public readonly port: number = 6379;
-  public readonly token: string;
+  public readonly connectionStringSecret: secretsmanager.ISecret;
 
   constructor(scope: Construct, id: string, props: CacheProps) {
     super(scope, id);
 
     const { vpc, cacheMultiAz } = props;
+
+    const port = 6379;
 
     const subnetGroup = new elasticache.CfnSubnetGroup(this, 'SubnetGroup', {
       subnetIds: vpc.privateSubnets.map(({ subnetId }) => subnetId),
@@ -27,6 +28,13 @@ export class Cache extends Construct implements ec2.IConnectable {
 
     const securityGroup = new ec2.SecurityGroup(this, 'SecurityGroup', {
       vpc,
+    });
+
+    const secret = new secretsmanager.Secret(this, 'AuthToken', {
+      generateSecretString: {
+        passwordLength: 30,
+        excludePunctuation: true,
+      },
     });
 
     const logGroup = new logs.LogGroup(this, 'LogGroup', {
@@ -45,7 +53,7 @@ export class Cache extends Construct implements ec2.IConnectable {
       engine: 'Valkey',
       cacheNodeType: 'cache.t4g.micro',
       engineVersion: '8.0',
-      port: this.port,
+      port,
       replicasPerNodeGroup: cacheMultiAz ? 1 : 0,
       numNodeGroups: 1,
       replicationGroupDescription: 'Valkey Cache for Langfuse',
@@ -54,7 +62,7 @@ export class Cache extends Construct implements ec2.IConnectable {
       multiAzEnabled: cacheMultiAz,
       securityGroupIds: [securityGroup.securityGroupId],
       transitEncryptionEnabled: true,
-      transitEncryptionMode: 'preferred', // In `required` mode, Langfuse services cannot connect to Cache.
+      transitEncryptionMode: 'required',
       atRestEncryptionEnabled: true,
       cacheParameterGroupName: parameterGroup.ref,
       logDeliveryConfigurations: [
@@ -69,11 +77,15 @@ export class Cache extends Construct implements ec2.IConnectable {
           },
         },
       ],
+      authToken: secret.secretValue.unsafeUnwrap(),
     });
 
-    this.endpoint = cache.attrPrimaryEndPointAddress;
-    this.token = cache.authToken!;
+    this.connectionStringSecret = new secretsmanager.Secret(this, 'ConnectionStringSecret', {
+      secretStringValue: SecretValue.unsafePlainText(
+        `rediss://:${secret.secretValue.unsafeUnwrap()}@${cache.attrPrimaryEndPointAddress}:${port}`,
+      ),
+    });
 
-    this.connections = new ec2.Connections({ securityGroups: [securityGroup], defaultPort: ec2.Port.tcp(this.port) });
+    this.connections = new ec2.Connections({ securityGroups: [securityGroup], defaultPort: ec2.Port.tcp(port) });
   }
 }

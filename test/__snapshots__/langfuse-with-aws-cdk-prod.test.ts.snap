@@ -375,6 +375,18 @@ exports[`snapshot test for prod 1`] = `
     "Cache18F6EE16": {
       "Properties": {
         "AtRestEncryptionEnabled": true,
+        "AuthToken": {
+          "Fn::Join": [
+            "",
+            [
+              "{{resolve:secretsmanager:",
+              {
+                "Ref": "CacheAuthToken04672416",
+              },
+              ":SecretString:::}}",
+            ],
+          ],
+        },
         "AutomaticFailoverEnabled": false,
         "CacheNodeType": "cache.t4g.micro",
         "CacheParameterGroupName": {
@@ -413,9 +425,46 @@ exports[`snapshot test for prod 1`] = `
           },
         ],
         "TransitEncryptionEnabled": true,
-        "TransitEncryptionMode": "preferred",
+        "TransitEncryptionMode": "required",
       },
       "Type": "AWS::ElastiCache::ReplicationGroup",
+    },
+    "CacheAuthToken04672416": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 30,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CacheConnectionStringSecret42484840": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "SecretString": {
+          "Fn::Join": [
+            "",
+            [
+              "rediss://:{{resolve:secretsmanager:",
+              {
+                "Ref": "CacheAuthToken04672416",
+              },
+              ":SecretString:::}}@",
+              {
+                "Fn::GetAtt": [
+                  "Cache18F6EE16",
+                  "PrimaryEndPoint.Address",
+                ],
+              },
+              ":6379",
+            ],
+          ],
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
     },
     "CacheLogGroup527D0E4F": {
       "DeletionPolicy": "Delete",
@@ -2307,22 +2356,6 @@ exports[`snapshot test for prod 1`] = `
                 "Value": "langfuse",
               },
               {
-                "Name": "REDIS_HOST",
-                "Value": {
-                  "Fn::GetAtt": [
-                    "Cache18F6EE16",
-                    "PrimaryEndPoint.Address",
-                  ],
-                },
-              },
-              {
-                "Name": "REDIS_PORT",
-                "Value": "6379",
-              },
-              {
-                "Name": "REDIS_AUTH",
-              },
-              {
                 "Name": "CLICKHOUSE_MIGRATION_URL",
                 "Value": "clickhouse://clickhouse-tcp.local:9000",
               },
@@ -2451,6 +2484,12 @@ exports[`snapshot test for prod 1`] = `
                 },
               },
               {
+                "Name": "REDIS_CONNECTION_STRING",
+                "ValueFrom": {
+                  "Ref": "CacheConnectionStringSecret42484840",
+                },
+              },
+              {
                 "Name": "CLICKHOUSE_PASSWORD",
                 "ValueFrom": {
                   "Ref": "ClickHouseClickhousePasswordA123CFFB",
@@ -2556,6 +2595,16 @@ exports[`snapshot test for prod 1`] = `
               "Effect": "Allow",
               "Resource": {
                 "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "CacheConnectionStringSecret42484840",
               },
             },
             {
@@ -2800,22 +2849,6 @@ exports[`snapshot test for prod 1`] = `
                 "Value": "langfuse",
               },
               {
-                "Name": "REDIS_HOST",
-                "Value": {
-                  "Fn::GetAtt": [
-                    "Cache18F6EE16",
-                    "PrimaryEndPoint.Address",
-                  ],
-                },
-              },
-              {
-                "Name": "REDIS_PORT",
-                "Value": "6379",
-              },
-              {
-                "Name": "REDIS_AUTH",
-              },
-              {
                 "Name": "CLICKHOUSE_MIGRATION_URL",
                 "Value": "clickhouse://clickhouse-tcp.local:9000",
               },
@@ -2884,6 +2917,18 @@ exports[`snapshot test for prod 1`] = `
             ],
             "Secrets": [
               {
+                "Name": "SALT",
+                "ValueFrom": {
+                  "Ref": "SaltDBAE3CEC",
+                },
+              },
+              {
+                "Name": "ENCRYPTION_KEY",
+                "ValueFrom": {
+                  "Ref": "EncryptionKey1B843E66",
+                },
+              },
+              {
                 "Name": "DATABASE_HOST",
                 "ValueFrom": {
                   "Fn::Join": [
@@ -2926,15 +2971,9 @@ exports[`snapshot test for prod 1`] = `
                 },
               },
               {
-                "Name": "SALT",
+                "Name": "REDIS_CONNECTION_STRING",
                 "ValueFrom": {
-                  "Ref": "SaltDBAE3CEC",
-                },
-              },
-              {
-                "Name": "ENCRYPTION_KEY",
-                "ValueFrom": {
-                  "Ref": "EncryptionKey1B843E66",
+                  "Ref": "CacheConnectionStringSecret42484840",
                 },
               },
               {
@@ -3017,16 +3056,6 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
-              },
-            },
-            {
-              "Action": [
-                "secretsmanager:GetSecretValue",
-                "secretsmanager:DescribeSecret",
-              ],
-              "Effect": "Allow",
-              "Resource": {
                 "Ref": "SaltDBAE3CEC",
               },
             },
@@ -3038,6 +3067,26 @@ exports[`snapshot test for prod 1`] = `
               "Effect": "Allow",
               "Resource": {
                 "Ref": "EncryptionKey1B843E66",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "DatabaseClusterSecretAttachmentDC8466C0",
+              },
+            },
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Ref": "CacheConnectionStringSecret42484840",
               },
             },
             {
