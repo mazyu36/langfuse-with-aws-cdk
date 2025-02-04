@@ -53,3 +53,87 @@ If you no longer need the resources, destroy the stack with:
 ```sh
 npx cdk destroy --context env=dev
 ```
+
+## Example: Testing the Langfuse Application via REST API
+
+After building your application, you can perform operational checks using REST API calls.
+This section provides a step-by-step guide to testing your app.
+
+### Reference
+For detailed API documentation, please refer to the [API Reference](https://api.reference.langfuse.com/#tag/comments).
+
+### Setting Up Environment Variables
+
+Before making API calls, you need to set your hostname and API keys. Replace the placeholders with your actual Langfuse URL, Public Key, and Private Key.
+
+```sh
+export LANGFUSE_HOST="YOUR_LANGFUSE_URL"
+export LANGFUSE_PUBLIC_KEY="YOUR_PUBLIC_KEY"
+export LANGFUSE_PRIVATE_KEY="YOUR_PRIVATE_KEY"
+```
+
+### Performing a Health Check
+
+You can perform a health check using the following curl command:
+
+```sh
+curl "$LANGFUSE_HOST/api/public/health" \
+  --header "Authorization: $LANGFUSE_PUBLIC_KEY:$LANGFUSE_PRIVATE_KEY"
+```
+
+#### Expected Result
+A successful health check will return a response similar to this:
+
+```json
+{
+  "status": "OK",
+  "version": "3.24.0"
+}
+```
+
+### Ingestion Test
+
+To test the ingestion, use the following curl command.
+This example demonstrates how to send a trace creation request.
+
+```sh
+curl -X POST "$LANGFUSE_HOST/api/public/ingestion" \
+  -u "$LANGFUSE_PUBLIC_KEY:$LANGFUSE_PRIVATE_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "batch": [
+      {
+        "type": "trace-create",
+        "id": "'$(uuidgen)'",
+        "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")'",
+        "metadata": null,
+        "body": {
+          "id": "'$(uuidgen)'",
+          "name": "test",
+          "timestamp": "'$(date -u +"%Y-%m-%dT%H:%M:%S.000Z")'",
+          "public": false
+        }
+      }
+    ],
+    "metadata": null
+  }'
+```
+
+#### Expected Result
+A successful ingestion will return a response like this:
+
+```json
+{
+  "successes": [
+    {
+      "id": "523EFC5E-8BAC-485D-9CC3-C049B5F64FA4",
+      "status": 201
+    }
+  ],
+  "errors": []
+}
+```
+
+It is acceptable as long as the result can be viewed from the frontend as well, as shown below.
+
+![ingestion result](./img/ingestion_example.png)
