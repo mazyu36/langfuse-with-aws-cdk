@@ -41,6 +41,10 @@ export class Cache extends Construct implements ec2.IConnectable {
       removalPolicy: RemovalPolicy.DESTROY,
     });
 
+    /**
+     * We must set the parameter `maxmemory-policy` to `noeviction` to ensure that the queue jobs are not evicted from the cache.
+     * @see https://langfuse.com/self-hosting/infrastructure/cache#deployment-options
+     */
     const parameterGroup = new elasticache.CfnParameterGroup(this, 'RedisParameterGroup', {
       cacheParameterGroupFamily: 'valkey8',
       description: 'Custom parameter group for Langfuse ElastiCache',
