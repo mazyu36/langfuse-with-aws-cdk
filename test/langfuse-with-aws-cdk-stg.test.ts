@@ -4,7 +4,7 @@ import * as LangfuseWithAwsCdk from '../lib/langfuse-with-aws-cdk-stack';
 import { getAppConfig } from '../bin/app-config';
 
 test('snapshot test for prod', () => {
-  const envName = 'prod';
+  const envName = 'stg';
 
   const app = new cdk.App();
 

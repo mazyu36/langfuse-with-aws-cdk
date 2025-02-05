@@ -113,7 +113,20 @@ exports[`snapshot test for prod 1`] = `
       "Export": {
         "Name": "LangfuseURL",
       },
-      "Value": "https://langfuse.example.com",
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "http://",
+            {
+              "Fn::GetAtt": [
+                "WebApplicationLoadBalancerCC36E523",
+                "DNSName",
+              ],
+            },
+          ],
+        ],
+      },
     },
   },
   "Parameters": {
@@ -807,6 +820,16 @@ exports[`snapshot test for prod 1`] = `
         "ClickHouseTaskDefinitionTaskRole41536CE9",
       ],
       "Properties": {
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 0,
+          },
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 1,
+          },
+        ],
         "Cluster": {
           "Ref": "ClusterEB0386A7",
         },
@@ -821,7 +844,6 @@ exports[`snapshot test for prod 1`] = `
         },
         "EnableECSManagedTags": false,
         "EnableExecuteCommand": true,
-        "LaunchType": "FARGATE",
         "NetworkConfiguration": {
           "AwsvpcConfiguration": {
             "AssignPublicIp": "DISABLED",
@@ -1269,7 +1291,7 @@ exports[`snapshot test for prod 1`] = `
         "Port": 5432,
         "ServerlessV2ScalingConfiguration": {
           "MaxCapacity": 2,
-          "MinCapacity": 0.5,
+          "MinCapacity": 0,
         },
         "StorageEncrypted": true,
         "VpcSecurityGroupIds": [
@@ -1986,36 +2008,6 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::S3::BucketPolicy",
     },
-    "WebAliasRecord22320298": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::Join": [
-              "",
-              [
-                "dualstack.",
-                {
-                  "Fn::GetAtt": [
-                    "WebApplicationLoadBalancerCC36E523",
-                    "DNSName",
-                  ],
-                },
-              ],
-            ],
-          },
-          "HostedZoneId": {
-            "Fn::GetAtt": [
-              "WebApplicationLoadBalancerCC36E523",
-              "CanonicalHostedZoneID",
-            ],
-          },
-        },
-        "HostedZoneId": "DUMMY",
-        "Name": "langfuse.example.com.",
-        "Type": "A",
-      },
-      "Type": "AWS::Route53::RecordSet",
-    },
     "WebApplicationLoadBalancerCC36E523": {
       "DependsOn": [
         "VPCPublicSubnet1DefaultRoute91CEF279",
@@ -2068,13 +2060,6 @@ exports[`snapshot test for prod 1`] = `
     },
     "WebApplicationLoadBalancerListenerD48857F0": {
       "Properties": {
-        "Certificates": [
-          {
-            "CertificateArn": {
-              "Ref": "WebCertificateDA5CDDF6",
-            },
-          },
-        ],
         "DefaultActions": [
           {
             "TargetGroupArn": {
@@ -2086,8 +2071,8 @@ exports[`snapshot test for prod 1`] = `
         "LoadBalancerArn": {
           "Ref": "WebApplicationLoadBalancerCC36E523",
         },
-        "Port": 443,
-        "Protocol": "HTTPS",
+        "Port": 80,
+        "Protocol": "HTTP",
       },
       "Type": "AWS::ElasticLoadBalancingV2::Listener",
     },
@@ -2097,17 +2082,17 @@ exports[`snapshot test for prod 1`] = `
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
-            "Description": "from 0.0.0.0/0:443",
-            "FromPort": 443,
+            "Description": "from 0.0.0.0/0:80",
+            "FromPort": 80,
             "IpProtocol": "tcp",
-            "ToPort": 443,
+            "ToPort": 80,
           },
           {
             "CidrIpv6": "::/0",
-            "Description": "from ::/0:443",
-            "FromPort": 443,
+            "Description": "from ::/0:80",
+            "FromPort": 80,
             "IpProtocol": "tcp",
-            "ToPort": 443,
+            "ToPort": 80,
           },
         ],
         "VpcId": {
@@ -2137,25 +2122,6 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupEgress",
     },
-    "WebCertificateDA5CDDF6": {
-      "Properties": {
-        "DomainName": "langfuse.example.com",
-        "DomainValidationOptions": [
-          {
-            "DomainName": "langfuse.example.com",
-            "HostedZoneId": "DUMMY",
-          },
-        ],
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "MyTestStack/Web/Certificate",
-          },
-        ],
-        "ValidationMethod": "DNS",
-      },
-      "Type": "AWS::CertificateManager::Certificate",
-    },
     "WebNextAuthSecretB20A2FF1": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2174,6 +2140,16 @@ exports[`snapshot test for prod 1`] = `
         "WebTaskDefinitionTaskRole96791EDD",
       ],
       "Properties": {
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 0,
+          },
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 1,
+          },
+        ],
         "Cluster": {
           "Ref": "ClusterEB0386A7",
         },
@@ -2189,7 +2165,6 @@ exports[`snapshot test for prod 1`] = `
         "EnableECSManagedTags": false,
         "EnableExecuteCommand": true,
         "HealthCheckGracePeriodSeconds": 60,
-        "LaunchType": "FARGATE",
         "LoadBalancers": [
           {
             "ContainerName": "Container",
@@ -2333,7 +2308,20 @@ exports[`snapshot test for prod 1`] = `
             "Environment": [
               {
                 "Name": "NEXTAUTH_URL",
-                "Value": "https://langfuse.example.com",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "http://",
+                      {
+                        "Fn::GetAtt": [
+                          "WebApplicationLoadBalancerCC36E523",
+                          "DNSName",
+                        ],
+                      },
+                    ],
+                  ],
+                },
               },
               {
                 "Name": "TELEMETRY_ENABLED",
@@ -2349,7 +2337,7 @@ exports[`snapshot test for prod 1`] = `
               },
               {
                 "Name": "LANGFUSE_LOG_LEVEL",
-                "Value": "info",
+                "Value": "debug",
               },
               {
                 "Name": "DATABASE_NAME",
@@ -2742,6 +2730,16 @@ exports[`snapshot test for prod 1`] = `
         "WorkerTaskDefinitionTaskRoleDCDA51F5",
       ],
       "Properties": {
+        "CapacityProviderStrategy": [
+          {
+            "CapacityProvider": "FARGATE",
+            "Weight": 0,
+          },
+          {
+            "CapacityProvider": "FARGATE_SPOT",
+            "Weight": 1,
+          },
+        ],
         "Cluster": {
           "Ref": "ClusterEB0386A7",
         },
@@ -2756,7 +2754,6 @@ exports[`snapshot test for prod 1`] = `
         },
         "EnableECSManagedTags": false,
         "EnableExecuteCommand": true,
-        "LaunchType": "FARGATE",
         "NetworkConfiguration": {
           "AwsvpcConfiguration": {
             "AssignPublicIp": "DISABLED",
@@ -2842,7 +2839,7 @@ exports[`snapshot test for prod 1`] = `
               },
               {
                 "Name": "LANGFUSE_LOG_LEVEL",
-                "Value": "info",
+                "Value": "debug",
               },
               {
                 "Name": "DATABASE_NAME",

@@ -64,12 +64,12 @@ For detailed API documentation, please refer to the [API Reference](https://api.
 
 ### Setting Up Environment Variables
 
-Before making API calls, you need to set your hostname and API keys. Replace the placeholders with your actual Langfuse URL, Public Key, and Private Key.
+Before making API calls, you need to set your hostname and API keys. Replace the placeholders with your actual Langfuse URL, Public Key, and Secret Key.
 
 ```sh
-export LANGFUSE_HOST="YOUR_LANGFUSE_URL"
+export LANGFUSE_SECRET_KEY="YOUR_SECRET_KEY"
 export LANGFUSE_PUBLIC_KEY="YOUR_PUBLIC_KEY"
-export LANGFUSE_PRIVATE_KEY="YOUR_PRIVATE_KEY"
+export LANGFUSE_HOST="YOUR_LANGFUSE_URL"
 ```
 
 ### Performing a Health Check
@@ -78,7 +78,7 @@ You can perform a health check using the following curl command:
 
 ```sh
 curl "$LANGFUSE_HOST/api/public/health" \
-  --header "Authorization: $LANGFUSE_PUBLIC_KEY:$LANGFUSE_PRIVATE_KEY"
+  --header "Authorization: $LANGFUSE_PUBLIC_KEY:$LANGFUSE_SECRET_KEY"
 ```
 
 #### Expected Result
@@ -98,7 +98,7 @@ This example demonstrates how to send a trace creation request.
 
 ```sh
 curl -X POST "$LANGFUSE_HOST/api/public/ingestion" \
-  -u "$LANGFUSE_PUBLIC_KEY:$LANGFUSE_PRIVATE_KEY" \
+  -u "$LANGFUSE_PUBLIC_KEY:$LANGFUSE_SECRET_KEY" \
   -H "Content-Type: application/json" \
   -d '{
     "batch": [

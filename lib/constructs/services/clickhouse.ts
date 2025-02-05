@@ -9,6 +9,9 @@ import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 export interface ClickHouseProps {
   vpc: ec2.IVpc;
   cluster: ecs.ICluster;
+  enableFargateSpot?: boolean;
+  taskDefCpu?: number;
+  taskDefMemoryLimitMiB?: number;
   imageTag: string;
 }
 
@@ -22,7 +25,13 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
   constructor(scope: Construct, id: string, props: ClickHouseProps) {
     super(scope, id);
 
-    const { vpc, cluster, imageTag } = props;
+    const {
+      vpc,
+      cluster,
+      enableFargateSpot,
+      taskDefCpu,
+      taskDefMemoryLimitMiB,
+      imageTag } = props;
 
     const fileSystem = new efs.FileSystem(this, 'EfsFileSystem', {
       vpc: vpc,
@@ -46,8 +55,8 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
     );
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-      cpu: 1024,
-      memoryLimitMiB: 2048,
+      cpu: taskDefCpu ?? 1024,
+      memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
       runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
       volumes: [
         {
@@ -132,6 +141,16 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
       },
       enableExecuteCommand: true,
       securityGroups: [securityGroup],
+      capacityProviderStrategies: enableFargateSpot ? [
+        {
+          capacityProvider: 'FARGATE',
+          weight: 0,
+        },
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+        },
+      ] : undefined,
     });
 
     fileSystem.connections.allowDefaultPortFrom(service.connections);
