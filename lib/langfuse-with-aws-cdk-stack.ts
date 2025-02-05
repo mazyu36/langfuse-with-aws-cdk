@@ -98,6 +98,9 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     const clickhouse = new ClickHouse(this, 'ClickHouse', {
       vpc,
       cluster,
+      enableFargateSpot: stackConfig.enableFargateSpot,
+      taskDefCpu: stackConfig.taskDefCpu,
+      taskDefMemoryLimitMiB: stackConfig.taskDefMemoryLimitMiB,
       imageTag: clickhouseImageTag,
     });
 
@@ -131,6 +134,10 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,
       cluster,
+      enableFargateSpot: stackConfig.enableFargateSpot,
+      taskDefCpu: stackConfig.taskDefCpu,
+      taskDefMemoryLimitMiB: stackConfig.taskDefMemoryLimitMiB,
+      langfuseWebTaskCount: stackConfig.langfuseWebTaskCount,
       imageTag: langfuseImageTag,
       logLevel: langfuseLogLvel,
       encryptionKey,
@@ -146,6 +153,9 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
      */
     new Worker(this, 'Worker', {
       cluster,
+      enableFargateSpot: stackConfig.enableFargateSpot,
+      taskDefCpu: stackConfig.taskDefCpu,
+      taskDefMemoryLimitMiB: stackConfig.taskDefMemoryLimitMiB,
       imageTag: langfuseImageTag,
       logLevel: langfuseLogLvel,
       encryptionKey,

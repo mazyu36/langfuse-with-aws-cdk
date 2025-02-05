@@ -22,6 +22,10 @@ export interface WebProps {
   allowedIPv6Cidrs: string[];
 
   cluster: ecs.ICluster;
+  enableFargateSpot?: boolean;
+  taskDefCpu?: number;
+  taskDefMemoryLimitMiB?: number;
+  langfuseWebTaskCount?: number;
   imageTag: string;
   logLevel: LOG_LEVEL;
   encryptionKey: secretsmanager.ISecret;
@@ -40,8 +44,17 @@ export class Web extends Construct {
     super(scope, id);
 
     const {
+      hostName,
+      domainName,
+      allowedIPv4Cidrs,
+      allowedIPv6Cidrs,
+
       vpc,
       cluster,
+      enableFargateSpot,
+      taskDefCpu,
+      taskDefMemoryLimitMiB,
+      langfuseWebTaskCount,
       imageTag,
       logLevel,
       encryptionKey,
@@ -51,11 +64,6 @@ export class Web extends Construct {
       cache,
       clickhouse,
       bucket,
-
-      hostName,
-      domainName,
-      allowedIPv4Cidrs,
-      allowedIPv6Cidrs,
     } = props;
 
     /**
@@ -67,9 +75,9 @@ export class Web extends Construct {
 
     const certificate = hostedZone
       ? new acm.Certificate(this, 'Certificate', {
-          domainName: `${hostName}.${hostedZone.zoneName}`,
-          validation: acm.CertificateValidation.fromDns(hostedZone),
-        })
+        domainName: `${hostName}.${hostedZone.zoneName}`,
+        validation: acm.CertificateValidation.fromDns(hostedZone),
+      })
       : undefined;
 
     const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
@@ -109,8 +117,8 @@ export class Web extends Construct {
      * ECS Service
      */
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-      cpu: 1024,
-      memoryLimitMiB: 2048,
+      cpu: taskDefCpu ?? 1024,
+      memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
       runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
     });
 
@@ -179,6 +187,17 @@ export class Web extends Construct {
         }),
       },
       enableExecuteCommand: true,
+      capacityProviderStrategies: enableFargateSpot ? [
+        {
+          capacityProvider: 'FARGATE',
+          weight: 0,
+        },
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+        },
+      ] : undefined,
+      desiredCount: langfuseWebTaskCount,
     });
 
     service.connections.allowToDefaultPort(database);

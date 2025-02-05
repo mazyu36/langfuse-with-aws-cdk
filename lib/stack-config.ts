@@ -14,6 +14,44 @@ export interface StackConfig {
   allowedIPv6Cidrs?: string[];
 
   /**
+   * Whether to use Fargate Spot for Langfuse web/server and ClickHouse.
+   *
+   * @default - Not use Fargate Spot
+   */
+  enableFargateSpot?: boolean;
+
+  /**
+   * The vCPU of Fargate Task Definition for Langfuse web/server and ClickHouse.
+   *
+   * Langfuse recommend that you should have at least 2 CPUs for production environments.
+   *
+   * @default 1024
+   * @see https://langfuse.com/self-hosting/infrastructure/containers#recommended-sizing
+   */
+  taskDefCpu?: number;
+
+  /**
+   * The amount (in MiN) of Memory of Fargate Task Definition for Langfuse web/server and ClickHouse.
+   *
+   * Langfuse recommend that you should have at 4 GB of RAM for production environments.
+   *
+   * @default 2048
+   * @see https://langfuse.com/self-hosting/infrastructure/containers#recommended-sizing
+   */
+  taskDefMemoryLimitMiB?: number;
+
+
+  /**
+   * The number of task for Langfuse Web.
+   *
+   * Langfuse recommend that you should have at least two containers for production environments.
+   *
+   * @default undefined - ECS default setting is 1
+   * @see https://langfuse.com/self-hosting/infrastructure/containers#recommended-sizing
+   */
+  langfuseWebTaskCount?: number;
+
+  /**
    * The Docker image tag for the Langfuse application.
    *
    * @default 'latest'
@@ -68,6 +106,7 @@ export enum LOG_LEVEL {
 
 const stackConfigMap: Record<string, StackConfig> = {
   dev: {
+    enableFargateSpot: true,
     createBastion: true,
     langfuseLogLevel: LOG_LEVEL.DEBUG,
     auroraScalesToZero: true,
@@ -79,6 +118,9 @@ const stackConfigMap: Record<string, StackConfig> = {
     cacheMultiAz: false,
   },
   prod: {
+    taskDefCpu: 2048,
+    taskDefMemoryLimitMiB: 4096,
+    langfuseWebTaskCount: 2,
     createBastion: true,
     langfuseLogLevel: LOG_LEVEL.INFO,
     langfuseImageTag: 'latest',

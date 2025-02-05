@@ -11,6 +11,9 @@ import { LOG_LEVEL } from '../../stack-config';
 
 export interface WorkerProps {
   cluster: ecs.ICluster;
+  enableFargateSpot?: boolean;
+  taskDefCpu?: number;
+  taskDefMemoryLimitMiB?: number;
   imageTag: string;
   logLevel: LOG_LEVEL;
   encryptionKey: secretsmanager.ISecret;
@@ -26,11 +29,25 @@ export class Worker extends Construct {
   constructor(scope: Construct, id: string, props: WorkerProps) {
     super(scope, id);
 
-    const { cluster, imageTag, logLevel, encryptionKey, salt, database, cache, clickhouse, bucket } = props;
+    const {
+      cluster,
+      enableFargateSpot,
+      taskDefCpu,
+      taskDefMemoryLimitMiB,
+      imageTag,
+      logLevel,
+      encryptionKey,
+      salt,
+
+      database,
+      cache,
+      clickhouse,
+      bucket
+    } = props;
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-      cpu: 1024,
-      memoryLimitMiB: 2048,
+      cpu: taskDefCpu ?? 1024,
+      memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
       runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
     });
 
@@ -89,6 +106,16 @@ export class Worker extends Construct {
         }),
       },
       enableExecuteCommand: true,
+      capacityProviderStrategies: enableFargateSpot ? [
+        {
+          capacityProvider: 'FARGATE',
+          weight: 0,
+        },
+        {
+          capacityProvider: 'FARGATE_SPOT',
+          weight: 1,
+        },
+      ] : undefined,
     });
 
     service.connections.allowToDefaultPort(database);
