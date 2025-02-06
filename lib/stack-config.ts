@@ -83,7 +83,7 @@ export interface StackConfig {
    * Whether Aurora Serverless scales to zero when idle to reduce costs.
    *
    * @default - Scaling to zero is disabled
-   * @see https://aws.amazon.com/jp/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/
+   * @see https://aws.amazon.com/blogs/database/introducing-scaling-to-0-capacity-with-amazon-aurora-serverless-v2/
    */
   auroraScalesToZero?: boolean;
 
