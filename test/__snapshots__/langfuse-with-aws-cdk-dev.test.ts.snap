@@ -1516,11 +1516,40 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::EC2::InternetGateway",
     },
+    "VPCNatSecurityGroupBE4985B5": {
+      "Properties": {
+        "GroupDescription": "Security Group for NAT instances",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1",
+          },
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:ALL TRAFFIC",
+            "IpProtocol": "-1",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC",
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
     "VPCPrivateSubnet1DefaultRouteAE1D6490": {
       "Properties": {
         "DestinationCidrBlock": "0.0.0.0/0",
-        "NatGatewayId": {
-          "Ref": "VPCPublicSubnet1NATGatewayE0556630",
+        "InstanceId": {
+          "Ref": "VPCPublicSubnet1NatInstance3250B23C",
         },
         "RouteTableId": {
           "Ref": "VPCPrivateSubnet1RouteTableBE8A6027",
@@ -1581,8 +1610,8 @@ exports[`snapshot test for prod 1`] = `
     "VPCPrivateSubnet2DefaultRouteF4F5CFD2": {
       "Properties": {
         "DestinationCidrBlock": "0.0.0.0/0",
-        "NatGatewayId": {
-          "Ref": "VPCPublicSubnet2NATGateway3C070193",
+        "InstanceId": {
+          "Ref": "VPCPublicSubnet1NatInstance3250B23C",
         },
         "RouteTableId": {
           "Ref": "VPCPrivateSubnet2RouteTable0A19E10E",
@@ -1655,41 +1684,91 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::EC2::Route",
     },
-    "VPCPublicSubnet1EIP6AD938E8": {
-      "Properties": {
-        "Domain": "vpc",
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "MyTestStack/VPC/PublicSubnet1",
-          },
-        ],
-      },
-      "Type": "AWS::EC2::EIP",
-    },
-    "VPCPublicSubnet1NATGatewayE0556630": {
+    "VPCPublicSubnet1NatInstance3250B23C": {
       "DependsOn": [
         "VPCPublicSubnet1DefaultRoute91CEF279",
+        "VPCPublicSubnet1NatInstanceInstanceRole07D20B24",
         "VPCPublicSubnet1RouteTableAssociation0B0896DC",
       ],
       "Properties": {
-        "AllocationId": {
-          "Fn::GetAtt": [
-            "VPCPublicSubnet1EIP6AD938E8",
-            "AllocationId",
-          ],
+        "AvailabilityZone": "dummy1a",
+        "IamInstanceProfile": {
+          "Ref": "VPCPublicSubnet1NatInstanceInstanceProfileE9ED11B4",
         },
-        "SubnetId": {
-          "Ref": "VPCPublicSubnet1SubnetB4246D30",
+        "ImageId": {
+          "Ref": "SsmParameterValueawsserviceamiamazonlinuxlatestal2023amikernel61arm64C96584B6F00A464EAD1953AFF4B05118Parameter",
+        },
+        "InstanceType": "t4g.nano",
+        "NetworkInterfaces": [
+          {
+            "AssociatePublicIpAddress": true,
+            "DeviceIndex": "0",
+            "GroupSet": [
+              {
+                "Fn::GetAtt": [
+                  "VPCNatSecurityGroupBE4985B5",
+                  "GroupId",
+                ],
+              },
+            ],
+            "SubnetId": {
+              "Ref": "VPCPublicSubnet1SubnetB4246D30",
+            },
+          },
+        ],
+        "SourceDestCheck": false,
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/VPC/PublicSubnet1/NatInstance",
+          },
+        ],
+        "UserData": {
+          "Fn::Base64": "#!/bin/bash
+yum install iptables-services -y
+systemctl enable iptables
+systemctl start iptables
+echo "net.ipv4.ip_forward=1" > /etc/sysctl.d/custom-ip-forwarding.conf
+sudo sysctl -p /etc/sysctl.d/custom-ip-forwarding.conf
+sudo /sbin/iptables -t nat -A POSTROUTING -o $(route | awk '/^default/{print $NF}') -j MASQUERADE
+sudo /sbin/iptables -F FORWARD
+sudo service iptables save",
+        },
+      },
+      "Type": "AWS::EC2::Instance",
+    },
+    "VPCPublicSubnet1NatInstanceInstanceProfileE9ED11B4": {
+      "Properties": {
+        "Roles": [
+          {
+            "Ref": "VPCPublicSubnet1NatInstanceInstanceRole07D20B24",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::InstanceProfile",
+    },
+    "VPCPublicSubnet1NatInstanceInstanceRole07D20B24": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ec2.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
         },
         "Tags": [
           {
             "Key": "Name",
-            "Value": "MyTestStack/VPC/PublicSubnet1",
+            "Value": "MyTestStack/VPC/PublicSubnet1/NatInstance",
           },
         ],
       },
-      "Type": "AWS::EC2::NatGateway",
+      "Type": "AWS::IAM::Role",
     },
     "VPCPublicSubnet1RouteTableAssociation0B0896DC": {
       "Properties": {
@@ -1755,42 +1834,6 @@ exports[`snapshot test for prod 1`] = `
         },
       },
       "Type": "AWS::EC2::Route",
-    },
-    "VPCPublicSubnet2EIP4947BC00": {
-      "Properties": {
-        "Domain": "vpc",
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "MyTestStack/VPC/PublicSubnet2",
-          },
-        ],
-      },
-      "Type": "AWS::EC2::EIP",
-    },
-    "VPCPublicSubnet2NATGateway3C070193": {
-      "DependsOn": [
-        "VPCPublicSubnet2DefaultRouteB7481BBA",
-        "VPCPublicSubnet2RouteTableAssociation5A808732",
-      ],
-      "Properties": {
-        "AllocationId": {
-          "Fn::GetAtt": [
-            "VPCPublicSubnet2EIP4947BC00",
-            "AllocationId",
-          ],
-        },
-        "SubnetId": {
-          "Ref": "VPCPublicSubnet2Subnet74179F39",
-        },
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "MyTestStack/VPC/PublicSubnet2",
-          },
-        ],
-      },
-      "Type": "AWS::EC2::NatGateway",
     },
     "VPCPublicSubnet2RouteTable6F1A15F1": {
       "Properties": {
