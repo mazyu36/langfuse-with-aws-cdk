@@ -3,7 +3,7 @@ import { Template } from 'aws-cdk-lib/assertions';
 import * as LangfuseWithAwsCdk from '../lib/langfuse-with-aws-cdk-stack';
 import { getAppConfig } from '../bin/app-config';
 
-test('snapshot test for prod', () => {
+test('snapshot test for dev', () => {
   const envName = 'dev';
 
   const app = new cdk.App();

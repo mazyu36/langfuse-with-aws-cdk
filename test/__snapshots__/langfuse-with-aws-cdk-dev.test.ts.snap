@@ -1,6 +1,6 @@
 // Jest Snapshot v1, https://goo.gl/fbAQLP
 
-exports[`snapshot test for prod 1`] = `
+exports[`snapshot test for dev 1`] = `
 {
   "Outputs": {
     "BastionBastionHostBastionHostIdE6364C04": {
