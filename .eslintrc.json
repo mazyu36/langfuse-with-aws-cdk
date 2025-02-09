@@ -10,5 +10,6 @@
   },
   "plugins": [
     "@typescript-eslint"
-  ]
+  ],
+  "ignorePatterns": ["*.d.ts"]
 }
