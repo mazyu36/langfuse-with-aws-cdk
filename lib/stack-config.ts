@@ -14,6 +14,13 @@ export interface StackConfig {
   allowedIPv6Cidrs?: string[];
 
   /**
+   * Whether to use a t4g.nano NAT instance instead of NAT Gateway.
+   *
+   * @default - Not use a NAT Instance (use a NAT Gateway)
+   */
+  useNatIncetance?: boolean;
+
+  /**
    * Whether to use Fargate Spot for Langfuse web/server and ClickHouse.
    *
    * @default - Not use Fargate Spot
@@ -105,6 +112,7 @@ export enum LOG_LEVEL {
 
 const stackConfigMap: Record<string, StackConfig> = {
   dev: {
+    useNatIncetance: true,
     enableFargateSpot: true,
     createBastion: true,
     langfuseLogLevel: LOG_LEVEL.DEBUG,

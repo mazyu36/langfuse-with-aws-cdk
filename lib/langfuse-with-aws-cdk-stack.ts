@@ -53,6 +53,15 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
           cidrMask: 24,
         },
       ],
+      ...(stackConfig.useNatIncetance
+        ? {
+            natGatewayProvider: ec2.NatProvider.instanceV2({
+              instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.NANO),
+              associatePublicIpAddress: true,
+            }),
+            natGateways: 1,
+          }
+        : undefined),
     });
 
     /**
