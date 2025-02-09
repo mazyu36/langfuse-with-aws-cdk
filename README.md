@@ -2,6 +2,11 @@
 
 This project helps you build and deploy [Langfuse v3](https://langfuse.com/changelog/2024-12-09-Langfuse-v3-stable-release) using AWS CDK.
 
+Please also refer to the blog posts I've created about this project.
+
+* [AWS CDKを使ってLangfuseをセルフホストする (Japanese)](https://mazyu36.hatenablog.com/entry/2025/02/06/121259)
+* [Self-Hosting Langfuse v3 on AWS Using CDK (Engilish)](https://dev.to/aws-builders/self-hosting-langfuse-v3-on-aws-using-cdk-508a)
+
 ## Architecture
 
 ![Architecture](./img/architecture.drawio.svg)

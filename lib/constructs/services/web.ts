@@ -75,9 +75,9 @@ export class Web extends Construct {
 
     const certificate = hostedZone
       ? new acm.Certificate(this, 'Certificate', {
-        domainName: `${hostName}.${hostedZone.zoneName}`,
-        validation: acm.CertificateValidation.fromDns(hostedZone),
-      })
+          domainName: `${hostName}.${hostedZone.zoneName}`,
+          validation: acm.CertificateValidation.fromDns(hostedZone),
+        })
       : undefined;
 
     const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
@@ -187,16 +187,18 @@ export class Web extends Construct {
         }),
       },
       enableExecuteCommand: true,
-      capacityProviderStrategies: enableFargateSpot ? [
-        {
-          capacityProvider: 'FARGATE',
-          weight: 0,
-        },
-        {
-          capacityProvider: 'FARGATE_SPOT',
-          weight: 1,
-        },
-      ] : undefined,
+      capacityProviderStrategies: enableFargateSpot
+        ? [
+            {
+              capacityProvider: 'FARGATE',
+              weight: 0,
+            },
+            {
+              capacityProvider: 'FARGATE_SPOT',
+              weight: 1,
+            },
+          ]
+        : undefined,
       desiredCount: langfuseWebTaskCount,
     });
 

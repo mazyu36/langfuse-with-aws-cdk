@@ -40,7 +40,6 @@ export interface StackConfig {
    */
   taskDefMemoryLimitMiB?: number;
 
-
   /**
    * The number of task for Langfuse Web.
    *

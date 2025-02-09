@@ -42,7 +42,7 @@ export class Worker extends Construct {
       database,
       cache,
       clickhouse,
-      bucket
+      bucket,
     } = props;
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
@@ -106,16 +106,18 @@ export class Worker extends Construct {
         }),
       },
       enableExecuteCommand: true,
-      capacityProviderStrategies: enableFargateSpot ? [
-        {
-          capacityProvider: 'FARGATE',
-          weight: 0,
-        },
-        {
-          capacityProvider: 'FARGATE_SPOT',
-          weight: 1,
-        },
-      ] : undefined,
+      capacityProviderStrategies: enableFargateSpot
+        ? [
+            {
+              capacityProvider: 'FARGATE',
+              weight: 0,
+            },
+            {
+              capacityProvider: 'FARGATE_SPOT',
+              weight: 1,
+            },
+          ]
+        : undefined,
     });
 
     service.connections.allowToDefaultPort(database);

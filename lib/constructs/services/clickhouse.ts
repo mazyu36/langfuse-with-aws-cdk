@@ -25,13 +25,7 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
   constructor(scope: Construct, id: string, props: ClickHouseProps) {
     super(scope, id);
 
-    const {
-      vpc,
-      cluster,
-      enableFargateSpot,
-      taskDefCpu,
-      taskDefMemoryLimitMiB,
-      imageTag } = props;
+    const { vpc, cluster, enableFargateSpot, taskDefCpu, taskDefMemoryLimitMiB, imageTag } = props;
 
     const fileSystem = new efs.FileSystem(this, 'EfsFileSystem', {
       vpc: vpc,
@@ -141,16 +135,18 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
       },
       enableExecuteCommand: true,
       securityGroups: [securityGroup],
-      capacityProviderStrategies: enableFargateSpot ? [
-        {
-          capacityProvider: 'FARGATE',
-          weight: 0,
-        },
-        {
-          capacityProvider: 'FARGATE_SPOT',
-          weight: 1,
-        },
-      ] : undefined,
+      capacityProviderStrategies: enableFargateSpot
+        ? [
+            {
+              capacityProvider: 'FARGATE',
+              weight: 0,
+            },
+            {
+              capacityProvider: 'FARGATE_SPOT',
+              weight: 1,
+            },
+          ]
+        : undefined,
     });
 
     fileSystem.connections.allowDefaultPortFrom(service.connections);
