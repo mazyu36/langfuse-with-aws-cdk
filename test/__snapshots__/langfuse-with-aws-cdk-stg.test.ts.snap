@@ -941,7 +941,7 @@ exports[`snapshot test for stg 1`] = `
             },
             "MountPoints": [
               {
-                "ContainerPath": "/clickhouse",
+                "ContainerPath": "/var/lib/clickhouse",
                 "ReadOnly": false,
                 "SourceVolume": "clickhouse",
               },
