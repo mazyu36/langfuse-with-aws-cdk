@@ -107,7 +107,7 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
 
     container.addMountPoints({
       sourceVolume: 'clickhouse',
-      containerPath: '/clickhouse',
+      containerPath: '/var/lib/clickhouse',
       readOnly: false,
     });
 

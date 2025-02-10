@@ -928,7 +928,7 @@ exports[`snapshot test for prod 1`] = `
             },
             "MountPoints": [
               {
-                "ContainerPath": "/clickhouse",
+                "ContainerPath": "/var/lib/clickhouse",
                 "ReadOnly": false,
                 "SourceVolume": "clickhouse",
               },
