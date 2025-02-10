@@ -8,7 +8,7 @@
     "build": "tsc",
     "format": "prettier --write './**/*.ts'",
     "format:check": "prettier --check './**/*.ts'",
-    "lint": "eslint --ext .ts .",
+    "lint": "eslint \"**/*.ts\"",
     "watch": "tsc -w",
     "test": "jest",
     "cdk": "cdk"
