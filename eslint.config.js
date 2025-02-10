@@ -1,9 +1,8 @@
-import pluginJs from "@eslint/js";
-import tseslint from "typescript-eslint";
-import prettier from "eslint-config-prettier";
+const pluginJs = require("@eslint/js");
+const tseslint = require("typescript-eslint");
+const prettier = require("eslint-config-prettier");
 
-/** @type {import('eslint').Linter.Config[]} */
-export default [
+module.exports = [
   { files: ["**/*.ts"] },
   {
     languageOptions: {
