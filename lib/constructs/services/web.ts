@@ -1,5 +1,6 @@
 import { Construct } from 'constructs';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
@@ -7,7 +8,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Cache } from '../cache';
 import { Database } from '../database';
 import { ClickHouse } from './clickhouse';
@@ -102,13 +103,89 @@ export class Web extends Construct {
     allowedIPv4Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
     allowedIPv6Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
 
+    let userPool = undefined;
+    let client = undefined;
     if (hostedZone) {
-      new route53.ARecord(this, 'AliasRecord', {
+      const albArecord = new route53.ARecord(this, 'AliasRecord', {
         zone: hostedZone,
         recordName: hostName,
         target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
       });
       this.url = `${protocol.toLowerCase()}://${hostName}.${hostedZone.zoneName}`;
+
+      /**
+       * Cognito
+       */
+      userPool = new cognito.UserPool(this, 'UserPool', {
+        accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+        signInAliases: {
+          email: true,
+        },
+        standardAttributes: {
+          email: {
+            required: true,
+            mutable: true,
+          },
+        },
+        selfSignUpEnabled: true,
+        removalPolicy: RemovalPolicy.DESTROY,
+      });
+
+      client = userPool.addClient('CognitoClient', {
+        authFlows: {
+          userPassword: true,
+          userSrp: true,
+        },
+        oAuth: {
+          flows: {
+            authorizationCodeGrant: true,
+          },
+          scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
+          callbackUrls: [`${this.url}/api/auth/callback/cognito`],
+        },
+        generateSecret: true,
+      });
+
+      new cognito.CfnManagedLoginBranding(this, 'ManagedLoginBranding', {
+        userPoolId: userPool.userPoolId,
+        clientId: client.userPoolClientId,
+        useCognitoProvidedValues: true,
+      });
+
+      /**
+       * Option1. Cognito domain
+       */
+      // const domain = userPool.addDomain('CognitoDomain', {
+      //   cognitoDomain: {
+      //     domainPrefix: 'auth-langfuse'
+      //   },
+      //   managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
+      // });
+
+      /**
+       * Option2. Cognito Custom domain
+       *
+       * TODO ACM must be created in us-east-1.
+       */
+      const authCertificate = new acm.Certificate(this, 'AuthCertificate', {
+        domainName: `auth.${hostName}.${hostedZone!.zoneName}`,
+        validation: acm.CertificateValidation.fromDns(hostedZone),
+      });
+
+      const domain = userPool.addDomain('CognitoDomain', {
+        customDomain: {
+          domainName: `auth.${hostName}.${hostedZone!.zoneName}`,
+          certificate: authCertificate,
+        },
+        managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
+      });
+      domain.node.addDependency(albArecord);
+
+      new route53.ARecord(this, 'CognitoARecord', {
+        zone: hostedZone!,
+        recordName: `auth.${hostName}`,
+        target: route53.RecordTarget.fromAlias(new targets.UserPoolDomainTarget(domain)),
+      });
     } else {
       this.url = `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
     }
@@ -153,6 +230,11 @@ export class Web extends Construct {
         LANGFUSE_S3_EVENT_UPLOAD_PREFIX: 'events/',
         LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: bucket.bucketName,
         LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: 'media/',
+
+        AUTH_COGNITO_CLIENT_ID: client!.userPoolClientId,
+        AUTH_COGNITO_CLIENT_SECRET: client!.userPoolClientSecret.unsafeUnwrap(),
+        AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${userPool!.userPoolId}`,
+        AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
       },
       secrets: {
         NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextAuthSecret),
