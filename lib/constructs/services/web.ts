@@ -43,17 +43,11 @@ export interface WebProps {
 export class Web extends Construct {
   public readonly url: string;
 
-  private readonly props: WebProps;
-  private readonly hostedZone: route53.IHostedZone | undefined;
-  private readonly albArecord: route53.ARecord;
-
   private userPool: cognito.IUserPool;
   private userPoolclient: cognito.IUserPoolClient;
 
   constructor(scope: Construct, id: string, props: WebProps) {
     super(scope, id);
-
-    this.props = props;
 
     const {
       hostName,
@@ -61,6 +55,7 @@ export class Web extends Construct {
 
       disableEmailPasswordAuth,
       enableCognitoAuth,
+      certificateForCognito,
 
       vpc,
       allowedIPv4Cidrs,
@@ -83,15 +78,15 @@ export class Web extends Construct {
     /**
      * Route53, Application Load Balancer
      */
-    this.hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
+    const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
 
-    const protocol = this.hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
+    const protocol = hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
 
-    const certificate = this.hostedZone
+    const certificate = hostedZone
       ? new acm.Certificate(this, 'Certificate', {
-          domainName: `${hostName}.${this.hostedZone.zoneName}`,
-          validation: acm.CertificateValidation.fromDns(this.hostedZone),
-        })
+        domainName: `${hostName}.${hostedZone.zoneName}`,
+        validation: acm.CertificateValidation.fromDns(hostedZone),
+      })
       : undefined;
 
     const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
@@ -116,15 +111,21 @@ export class Web extends Construct {
     allowedIPv4Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
     allowedIPv6Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
 
-    if (this.hostedZone) {
-      this.albArecord = new route53.ARecord(this, 'AliasRecord', {
-        zone: this.hostedZone,
+    if (hostedZone) {
+      const albARecord = new route53.ARecord(this, 'AliasRecord', {
+        zone: hostedZone,
         recordName: hostName,
         target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
       });
-      this.url = `${protocol.toLowerCase()}://${hostName}.${this.hostedZone.zoneName}`;
+      this.url = `${protocol.toLowerCase()}://${hostName}.${hostedZone.zoneName}`;
 
-      this.createCognitoAuthResource();
+      this.createCognitoAuthResource(
+        hostName!,
+        hostedZone,
+        albARecord,
+        enableCognitoAuth,
+        certificateForCognito,
+      );
     } else {
       this.url = `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
     }
@@ -195,15 +196,15 @@ export class Web extends Construct {
       enableExecuteCommand: true,
       capacityProviderStrategies: enableFargateSpot
         ? [
-            {
-              capacityProvider: 'FARGATE',
-              weight: 0,
-            },
-            {
-              capacityProvider: 'FARGATE_SPOT',
-              weight: 1,
-            },
-          ]
+          {
+            capacityProvider: 'FARGATE',
+            weight: 0,
+          },
+          {
+            capacityProvider: 'FARGATE_SPOT',
+            weight: 1,
+          },
+        ]
         : undefined,
       desiredCount: langfuseWebTaskCount,
     });
@@ -232,8 +233,18 @@ export class Web extends Construct {
     });
   }
 
-  private createCognitoAuthResource() {
-    if (!this.props.certificateForCognito || !this.hostedZone) {
+
+  /**
+   * Create Cognito UserPool, UserPool Client, and domain.
+   */
+  private createCognitoAuthResource(
+    hostName: string,
+    hostedZone: route53.IHostedZone,
+    albArecord: route53.ARecord,
+    enableCognitoAuth?: boolean,
+    certificateForCognito?: acm.ICertificate,
+  ) {
+    if (!enableCognitoAuth || !certificateForCognito) {
       return;
     }
 
@@ -278,16 +289,16 @@ export class Web extends Construct {
 
     const domain = this.userPool.addDomain('CognitoDomain', {
       customDomain: {
-        domainName: `auth.${this.props.hostName}.${this.hostedZone.zoneName}`,
-        certificate: this.props.certificateForCognito,
+        domainName: `auth.${hostName}.${hostedZone.zoneName}`,
+        certificate: certificateForCognito,
       },
       managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
     });
-    domain.node.addDependency(this.albArecord);
+    domain.node.addDependency(albArecord);
 
     new route53.ARecord(this, 'CognitoARecord', {
-      zone: this.hostedZone,
-      recordName: `auth.${this.props.hostName}`,
+      zone: hostedZone,
+      recordName: `auth.${hostName}`,
       target: route53.RecordTarget.fromAlias(new targets.UserPoolDomainTarget(domain)),
     });
   }
