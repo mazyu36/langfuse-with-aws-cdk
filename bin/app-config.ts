@@ -55,13 +55,17 @@ const appConfigMap: Record<string, AppConfig> = {
   stg: {
     env: {
       // account: '123456789012',
-      region: 'us-east-1',
+      region: 'us-west-1',
+    },
+    domainConfig: {
+      hostName: 'langfuse',
+      domainName: 'example.com',
     },
   },
   prod: {
     env: {
       // account: '123456789012',
-      region: 'us-east-1',
+      region: 'us-west-2',
     },
     domainConfig: {
       hostName: 'langfuse',

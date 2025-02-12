@@ -249,6 +249,9 @@ export class Web extends Construct {
         },
       },
       selfSignUpEnabled: true,
+      userVerification: {
+        emailSubject: 'Langfuse - Verify your new account',
+      },
       removalPolicy: RemovalPolicy.DESTROY,
     });
 

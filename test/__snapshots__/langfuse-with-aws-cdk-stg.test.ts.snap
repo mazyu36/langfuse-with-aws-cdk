@@ -113,20 +113,7 @@ exports[`snapshot test for stg 1`] = `
       "Export": {
         "Name": "LangfuseURL",
       },
-      "Value": {
-        "Fn::Join": [
-          "",
-          [
-            "http://",
-            {
-              "Fn::GetAtt": [
-                "WebApplicationLoadBalancerCC36E523",
-                "DNSName",
-              ],
-            },
-          ],
-        ],
-      },
+      "Value": "https://langfuse.example.com",
     },
   },
   "Parameters": {
@@ -1999,6 +1986,36 @@ exports[`snapshot test for stg 1`] = `
       },
       "Type": "AWS::S3::BucketPolicy",
     },
+    "WebAliasRecord22320298": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::Join": [
+              "",
+              [
+                "dualstack.",
+                {
+                  "Fn::GetAtt": [
+                    "WebApplicationLoadBalancerCC36E523",
+                    "DNSName",
+                  ],
+                },
+              ],
+            ],
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "WebApplicationLoadBalancerCC36E523",
+              "CanonicalHostedZoneID",
+            ],
+          },
+        },
+        "HostedZoneId": "DUMMY",
+        "Name": "langfuse.example.com.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
     "WebApplicationLoadBalancerCC36E523": {
       "DependsOn": [
         "VPCPublicSubnet1DefaultRoute91CEF279",
@@ -2051,6 +2068,13 @@ exports[`snapshot test for stg 1`] = `
     },
     "WebApplicationLoadBalancerListenerD48857F0": {
       "Properties": {
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "WebCertificateDA5CDDF6",
+            },
+          },
+        ],
         "DefaultActions": [
           {
             "TargetGroupArn": {
@@ -2062,8 +2086,8 @@ exports[`snapshot test for stg 1`] = `
         "LoadBalancerArn": {
           "Ref": "WebApplicationLoadBalancerCC36E523",
         },
-        "Port": 80,
-        "Protocol": "HTTP",
+        "Port": 443,
+        "Protocol": "HTTPS",
       },
       "Type": "AWS::ElasticLoadBalancingV2::Listener",
     },
@@ -2073,17 +2097,17 @@ exports[`snapshot test for stg 1`] = `
         "SecurityGroupIngress": [
           {
             "CidrIp": "0.0.0.0/0",
-            "Description": "from 0.0.0.0/0:80",
-            "FromPort": 80,
+            "Description": "from 0.0.0.0/0:443",
+            "FromPort": 443,
             "IpProtocol": "tcp",
-            "ToPort": 80,
+            "ToPort": 443,
           },
           {
             "CidrIpv6": "::/0",
-            "Description": "from ::/0:80",
-            "FromPort": 80,
+            "Description": "from ::/0:443",
+            "FromPort": 443,
             "IpProtocol": "tcp",
-            "ToPort": 80,
+            "ToPort": 443,
           },
         ],
         "VpcId": {
@@ -2112,6 +2136,25 @@ exports[`snapshot test for stg 1`] = `
         "ToPort": 3000,
       },
       "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "WebCertificateDA5CDDF6": {
+      "Properties": {
+        "DomainName": "langfuse.example.com",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "langfuse.example.com",
+            "HostedZoneId": "DUMMY",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/Web/Certificate",
+          },
+        ],
+        "ValidationMethod": "DNS",
+      },
+      "Type": "AWS::CertificateManager::Certificate",
     },
     "WebNextAuthSecretB20A2FF1": {
       "DeletionPolicy": "Delete",
@@ -2290,20 +2333,7 @@ exports[`snapshot test for stg 1`] = `
             "Environment": [
               {
                 "Name": "NEXTAUTH_URL",
-                "Value": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "http://",
-                      {
-                        "Fn::GetAtt": [
-                          "WebApplicationLoadBalancerCC36E523",
-                          "DNSName",
-                        ],
-                      },
-                    ],
-                  ],
-                },
+                "Value": "https://langfuse.example.com",
               },
               {
                 "Name": "HOSTNAME",

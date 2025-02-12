@@ -2,6 +2,16 @@
 
 exports[`snapshot test for prod 1`] = `
 {
+  "Mappings": {
+    "AWSCloudFrontPartitionHostedZoneIdMap": {
+      "aws": {
+        "zoneId": "Z2FDTNDATAQYW2",
+      },
+      "aws-cn": {
+        "zoneId": "Z3RFFRIM2A3IF5",
+      },
+    },
+  },
   "Outputs": {
     "BastionBastionHostBastionHostIdE6364C04": {
       "Description": "Instance ID of the bastion host. Use this to connect via SSM Session Manager",
@@ -128,6 +138,58 @@ exports[`snapshot test for prod 1`] = `
     },
   },
   "Resources": {
+    "AWS679f53fac002430cb0da5b7982bd22872D164C4C": {
+      "DependsOn": [
+        "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+      ],
+      "Properties": {
+        "Code": {
+          "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
+          "S3Key": "4cd2f2411231aa073e609dc99a49b5c5e974252bf9abf0f9350d237d17cce8be.zip",
+        },
+        "Handler": "index.handler",
+        "Role": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+            "Arn",
+          ],
+        },
+        "Runtime": "nodejs20.x",
+        "Timeout": 120,
+      },
+      "Type": "AWS::Lambda::Function",
+    },
+    "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com",
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition",
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole",
+              ],
+            ],
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Role",
+    },
     "BastionBastionHostC769482C": {
       "DependsOn": [
         "BastionBastionHostInstanceRoleDefaultPolicy0656D7A5",
@@ -2156,6 +2218,43 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::CertificateManager::Certificate",
     },
+    "WebCognitoARecordA4B8C158": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "WebUserPoolCognitoDomainCloudFrontDomainNameDDDEA0B9",
+              "DomainDescription.CloudFrontDistribution",
+            ],
+          },
+          "HostedZoneId": {
+            "Fn::FindInMap": [
+              "AWSCloudFrontPartitionHostedZoneIdMap",
+              {
+                "Ref": "AWS::Partition",
+              },
+              "zoneId",
+            ],
+          },
+        },
+        "HostedZoneId": "DUMMY",
+        "Name": "auth.langfuse.example.com.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
+    "WebManagedLoginBrandingEA2CBB58": {
+      "Properties": {
+        "ClientId": {
+          "Ref": "WebUserPoolCognitoClient1EB4073E",
+        },
+        "UseCognitoProvidedValues": true,
+        "UserPoolId": {
+          "Ref": "WebUserPool193FCF54",
+        },
+      },
+      "Type": "AWS::Cognito::ManagedLoginBranding",
+    },
     "WebNextAuthSecretB20A2FF1": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2391,6 +2490,43 @@ exports[`snapshot test for prod 1`] = `
               {
                 "Name": "LANGFUSE_S3_MEDIA_UPLOAD_PREFIX",
                 "Value": "media/",
+              },
+              {
+                "Name": "AUTH_DISABLE_USERNAME_PASSWORD",
+                "Value": "true",
+              },
+              {
+                "Name": "AUTH_COGNITO_CLIENT_ID",
+                "Value": {
+                  "Ref": "WebUserPoolCognitoClient1EB4073E",
+                },
+              },
+              {
+                "Name": "AUTH_COGNITO_CLIENT_SECRET",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "WebUserPoolCognitoClientDescribeCognitoUserPoolClient7804D790",
+                    "UserPoolClient.ClientSecret",
+                  ],
+                },
+              },
+              {
+                "Name": "AUTH_COGNITO_ISSUER",
+                "Value": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "https://cognito-idp.us-east-1.amazonaws.com/",
+                      {
+                        "Ref": "WebUserPool193FCF54",
+                      },
+                    ],
+                  ],
+                },
+              },
+              {
+                "Name": "AUTH_COGNITO_ALLOW_ACCOUNT_LINKING",
+                "Value": "true",
               },
             ],
             "Essential": true,
@@ -2736,6 +2872,249 @@ exports[`snapshot test for prod 1`] = `
         ],
       },
       "Type": "AWS::IAM::Policy",
+    },
+    "WebUserPool193FCF54": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1,
+            },
+          ],
+        },
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": false,
+        },
+        "AutoVerifiedAttributes": [
+          "email",
+        ],
+        "EmailVerificationMessage": "The verification code to your new account is {####}",
+        "EmailVerificationSubject": "Langfuse - Verify your new account",
+        "Schema": [
+          {
+            "Mutable": true,
+            "Name": "email",
+            "Required": true,
+          },
+        ],
+        "SmsVerificationMessage": "The verification code to your new account is {####}",
+        "UsernameAttributes": [
+          "email",
+        ],
+        "VerificationMessageTemplate": {
+          "DefaultEmailOption": "CONFIRM_WITH_CODE",
+          "EmailMessage": "The verification code to your new account is {####}",
+          "EmailSubject": "Langfuse - Verify your new account",
+          "SmsMessage": "The verification code to your new account is {####}",
+        },
+      },
+      "Type": "AWS::Cognito::UserPool",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WebUserPoolCognitoClient1EB4073E": {
+      "Properties": {
+        "AllowedOAuthFlows": [
+          "code",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": [
+          "openid",
+          "email",
+        ],
+        "CallbackURLs": [
+          "https://langfuse.example.com/api/auth/callback/cognito",
+        ],
+        "ExplicitAuthFlows": [
+          "ALLOW_USER_PASSWORD_AUTH",
+          "ALLOW_USER_SRP_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH",
+        ],
+        "GenerateSecret": true,
+        "SupportedIdentityProviders": [
+          "COGNITO",
+        ],
+        "UserPoolId": {
+          "Ref": "WebUserPool193FCF54",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
+    "WebUserPoolCognitoClientDescribeCognitoUserPoolClient7804D790": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "WebUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicyD3051B86",
+      ],
+      "Properties": {
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{"region":"us-east-1","service":"CognitoIdentityServiceProvider","action":"describeUserPoolClient","parameters":{"UserPoolId":"",
+              {
+                "Ref": "WebUserPool193FCF54",
+              },
+              "","ClientId":"",
+              {
+                "Ref": "WebUserPoolCognitoClient1EB4073E",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "WebUserPoolCognitoClient1EB4073E",
+              },
+              ""}}",
+            ],
+          ],
+        },
+        "InstallLatestAwsSdk": false,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{"region":"us-east-1","service":"CognitoIdentityServiceProvider","action":"describeUserPoolClient","parameters":{"UserPoolId":"",
+              {
+                "Ref": "WebUserPool193FCF54",
+              },
+              "","ClientId":"",
+              {
+                "Ref": "WebUserPoolCognitoClient1EB4073E",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "WebUserPoolCognitoClient1EB4073E",
+              },
+              ""}}",
+            ],
+          ],
+        },
+      },
+      "Type": "Custom::DescribeCognitoUserPoolClient",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "WebUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicyD3051B86": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "cognito-idp:DescribeUserPoolClient",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "WebUserPool193FCF54",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "WebUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicyD3051B86",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "WebUserPoolCognitoDomainAE9AE80E": {
+      "DependsOn": [
+        "WebAliasRecord22320298",
+      ],
+      "Properties": {
+        "CustomDomainConfig": {
+          "CertificateArn": {
+            "Fn::ImportValue": "UsEast1Stack-prod:ExportsOutputRefcertificateForCognitoC9901293271F8485",
+          },
+        },
+        "Domain": "auth.langfuse.example.com",
+        "ManagedLoginVersion": 2,
+        "UserPoolId": {
+          "Ref": "WebUserPool193FCF54",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolDomain",
+    },
+    "WebUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicy0EAD715B": {
+      "DependsOn": [
+        "WebAliasRecord22320298",
+      ],
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "cognito-idp:DescribeUserPoolDomain",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "WebUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicy0EAD715B",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "WebUserPoolCognitoDomainCloudFrontDomainNameDDDEA0B9": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "WebAliasRecord22320298",
+        "WebUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicy0EAD715B",
+      ],
+      "Properties": {
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"CognitoIdentityServiceProvider","action":"describeUserPoolDomain","parameters":{"Domain":"",
+              {
+                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
+              },
+              ""}}",
+            ],
+          ],
+        },
+        "InstallLatestAwsSdk": false,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"CognitoIdentityServiceProvider","action":"describeUserPoolDomain","parameters":{"Domain":"",
+              {
+                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
+              },
+              ""}}",
+            ],
+          ],
+        },
+      },
+      "Type": "Custom::UserPoolCloudFrontDomainName",
+      "UpdateReplacePolicy": "Delete",
     },
     "WorkerService3F60922A": {
       "DependsOn": [
