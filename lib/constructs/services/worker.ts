@@ -2,12 +2,11 @@ import { Construct } from 'constructs';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 import { Duration } from 'aws-cdk-lib';
 import { Database } from '../database';
 import { Cache } from '../cache';
 import { ClickHouse } from './clickhouse';
-import { LOG_LEVEL } from '../../stack-config';
+import { CommonEnvironment } from './common-environment';
 
 export interface WorkerProps {
   cluster: ecs.ICluster;
@@ -15,9 +14,7 @@ export interface WorkerProps {
   taskDefCpu?: number;
   taskDefMemoryLimitMiB?: number;
   imageTag: string;
-  logLevel: LOG_LEVEL;
-  encryptionKey: secretsmanager.ISecret;
-  salt: secretsmanager.ISecret;
+  commonEnvironment: CommonEnvironment;
 
   database: Database;
   cache: Cache;
@@ -35,9 +32,7 @@ export class Worker extends Construct {
       taskDefCpu,
       taskDefMemoryLimitMiB,
       imageTag,
-      logLevel,
-      encryptionKey,
-      salt,
+      commonEnvironment,
 
       database,
       cache,
@@ -51,41 +46,24 @@ export class Worker extends Construct {
       runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
     });
 
+    /**
+     * Set environment variables and sectrets
+     * @see https://langfuse.com/self-hosting/configuration
+     */
+    const environment = {
+      ...commonEnvironment.commonEnvironment,
+    };
+
+    const secrets = {
+      ...commonEnvironment.commonSecrets,
+    };
+
     taskDefinition.addContainer('Container', {
       image: ecs.ContainerImage.fromRegistry(`langfuse/langfuse-worker:${imageTag}`),
       portMappings: [{ containerPort: 3030, name: 'worker' }],
       logging: new ecs.AwsLogDriver({ streamPrefix: 'log' }),
-
-      // https://langfuse.com/self-hosting/configuration
-      environment: {
-        TELEMETRY_ENABLED: 'true',
-        LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: 'true',
-        LANGFUSE_LOG_LEVEL: logLevel,
-
-        DATABASE_NAME: database.databaseName,
-
-        CLICKHOUSE_MIGRATION_URL: 'clickhouse://clickhouse-tcp.local:9000',
-        CLICKHOUSE_URL: 'http://clickhouse-http.local:8123',
-        CLICKHOUSE_USER: clickhouse.clickhouseUser,
-        CLICKHOUSE_CLUSTER_ENABLED: 'false',
-
-        LANGFUSE_S3_EVENT_UPLOAD_BUCKET: bucket.bucketName,
-        LANGFUSE_S3_EVENT_UPLOAD_PREFIX: 'events/',
-        LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: bucket.bucketName,
-        LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: 'media/',
-      },
-      secrets: {
-        SALT: ecs.Secret.fromSecretsManager(salt),
-        ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKey),
-
-        DATABASE_HOST: ecs.Secret.fromSecretsManager(database.secret, 'host'),
-        DATABASE_USERNAME: ecs.Secret.fromSecretsManager(database.secret, 'username'),
-        DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(database.secret, 'password'),
-
-        REDIS_CONNECTION_STRING: ecs.Secret.fromSecretsManager(cache.connectionStringSecret),
-
-        CLICKHOUSE_PASSWORD: ecs.Secret.fromSecretsManager(clickhouse.clickhousePassword),
-      },
+      environment,
+      secrets,
       healthCheck: {
         command: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3030/ || exit 1'],
         interval: Duration.seconds(15),

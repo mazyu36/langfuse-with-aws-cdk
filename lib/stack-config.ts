@@ -130,7 +130,7 @@ const stackConfigMap: Record<string, StackConfig> = {
     langfuseWebTaskCount: 2,
     createBastion: true,
     langfuseLogLevel: LOG_LEVEL.INFO,
-    langfuseImageTag: 'latest',
+    langfuseImageTag: '3.26',
     auroraScalesToZero: false,
     cacheMultiAz: false,
   },
