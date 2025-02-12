@@ -1194,6 +1194,31 @@ exports[`snapshot test for dev 1`] = `
       },
       "Type": "AWS::ECS::Cluster",
     },
+    "CommonEnvironmentEncryptionKeyEEEB3C1C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludeCharacters": "ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+=-[]{};:,.<>?/",
+          "ExcludePunctuation": true,
+          "ExcludeUppercase": true,
+          "PasswordLength": 64,
+          "RequireEachIncludedType": false,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CommonEnvironmentSalt326EB889": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 32,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
     "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
       "DependsOn": [
         "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
@@ -1464,31 +1489,6 @@ exports[`snapshot test for dev 1`] = `
         },
       },
       "Type": "AWS::RDS::DBClusterParameterGroup",
-    },
-    "EncryptionKey1B843E66": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "GenerateSecretString": {
-          "ExcludeCharacters": "ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+=-[]{};:,.<>?/",
-          "ExcludePunctuation": true,
-          "ExcludeUppercase": true,
-          "PasswordLength": 64,
-          "RequireEachIncludedType": false,
-        },
-      },
-      "Type": "AWS::SecretsManager::Secret",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "SaltDBAE3CEC": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "GenerateSecretString": {
-          "ExcludePunctuation": true,
-          "PasswordLength": 32,
-        },
-      },
-      "Type": "AWS::SecretsManager::Secret",
-      "UpdateReplacePolicy": "Delete",
     },
     "VPCB9E5F0B4": {
       "Properties": {
@@ -2367,16 +2367,16 @@ sudo service iptables save",
                 },
               },
               {
+                "Name": "HOSTNAME",
+                "Value": "0.0.0.0",
+              },
+              {
                 "Name": "TELEMETRY_ENABLED",
                 "Value": "true",
               },
               {
                 "Name": "LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES",
                 "Value": "true",
-              },
-              {
-                "Name": "HOSTNAME",
-                "Value": "0.0.0.0",
               },
               {
                 "Name": "LANGFUSE_LOG_LEVEL",
@@ -2463,13 +2463,13 @@ sudo service iptables save",
               {
                 "Name": "SALT",
                 "ValueFrom": {
-                  "Ref": "SaltDBAE3CEC",
+                  "Ref": "CommonEnvironmentSalt326EB889",
                 },
               },
               {
                 "Name": "ENCRYPTION_KEY",
                 "ValueFrom": {
-                  "Ref": "EncryptionKey1B843E66",
+                  "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
                 },
               },
               {
@@ -2605,7 +2605,7 @@ sudo service iptables save",
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "SaltDBAE3CEC",
+                "Ref": "CommonEnvironmentSalt326EB889",
               },
             },
             {
@@ -2615,7 +2615,7 @@ sudo service iptables save",
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "EncryptionKey1B843E66",
+                "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
               },
             },
             {
@@ -2959,13 +2959,13 @@ sudo service iptables save",
               {
                 "Name": "SALT",
                 "ValueFrom": {
-                  "Ref": "SaltDBAE3CEC",
+                  "Ref": "CommonEnvironmentSalt326EB889",
                 },
               },
               {
                 "Name": "ENCRYPTION_KEY",
                 "ValueFrom": {
-                  "Ref": "EncryptionKey1B843E66",
+                  "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
                 },
               },
               {
@@ -3096,7 +3096,7 @@ sudo service iptables save",
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "SaltDBAE3CEC",
+                "Ref": "CommonEnvironmentSalt326EB889",
               },
             },
             {
@@ -3106,7 +3106,7 @@ sudo service iptables save",
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "EncryptionKey1B843E66",
+                "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
               },
             },
             {

@@ -1172,6 +1172,31 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::ECS::Cluster",
     },
+    "CommonEnvironmentEncryptionKeyEEEB3C1C": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludeCharacters": "ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+=-[]{};:,.<>?/",
+          "ExcludePunctuation": true,
+          "ExcludeUppercase": true,
+          "PasswordLength": 64,
+          "RequireEachIncludedType": false,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CommonEnvironmentSalt326EB889": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "GenerateSecretString": {
+          "ExcludePunctuation": true,
+          "PasswordLength": 32,
+        },
+      },
+      "Type": "AWS::SecretsManager::Secret",
+      "UpdateReplacePolicy": "Delete",
+    },
     "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F": {
       "DependsOn": [
         "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
@@ -1442,31 +1467,6 @@ exports[`snapshot test for prod 1`] = `
         },
       },
       "Type": "AWS::RDS::DBClusterParameterGroup",
-    },
-    "EncryptionKey1B843E66": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "GenerateSecretString": {
-          "ExcludeCharacters": "ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+=-[]{};:,.<>?/",
-          "ExcludePunctuation": true,
-          "ExcludeUppercase": true,
-          "PasswordLength": 64,
-          "RequireEachIncludedType": false,
-        },
-      },
-      "Type": "AWS::SecretsManager::Secret",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "SaltDBAE3CEC": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "GenerateSecretString": {
-          "ExcludePunctuation": true,
-          "PasswordLength": 32,
-        },
-      },
-      "Type": "AWS::SecretsManager::Secret",
-      "UpdateReplacePolicy": "Delete",
     },
     "VPCB9E5F0B4": {
       "Properties": {
@@ -2337,16 +2337,16 @@ exports[`snapshot test for prod 1`] = `
                 "Value": "https://langfuse.example.com",
               },
               {
+                "Name": "HOSTNAME",
+                "Value": "0.0.0.0",
+              },
+              {
                 "Name": "TELEMETRY_ENABLED",
                 "Value": "true",
               },
               {
                 "Name": "LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES",
                 "Value": "true",
-              },
-              {
-                "Name": "HOSTNAME",
-                "Value": "0.0.0.0",
               },
               {
                 "Name": "LANGFUSE_LOG_LEVEL",
@@ -2404,7 +2404,7 @@ exports[`snapshot test for prod 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:latest",
+            "Image": "langfuse/langfuse:3.26",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2433,13 +2433,13 @@ exports[`snapshot test for prod 1`] = `
               {
                 "Name": "SALT",
                 "ValueFrom": {
-                  "Ref": "SaltDBAE3CEC",
+                  "Ref": "CommonEnvironmentSalt326EB889",
                 },
               },
               {
                 "Name": "ENCRYPTION_KEY",
                 "ValueFrom": {
-                  "Ref": "EncryptionKey1B843E66",
+                  "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
                 },
               },
               {
@@ -2575,7 +2575,7 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "SaltDBAE3CEC",
+                "Ref": "CommonEnvironmentSalt326EB889",
               },
             },
             {
@@ -2585,7 +2585,7 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "EncryptionKey1B843E66",
+                "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
               },
             },
             {
@@ -2897,7 +2897,7 @@ exports[`snapshot test for prod 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:latest",
+            "Image": "langfuse/langfuse-worker:3.26",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2920,13 +2920,13 @@ exports[`snapshot test for prod 1`] = `
               {
                 "Name": "SALT",
                 "ValueFrom": {
-                  "Ref": "SaltDBAE3CEC",
+                  "Ref": "CommonEnvironmentSalt326EB889",
                 },
               },
               {
                 "Name": "ENCRYPTION_KEY",
                 "ValueFrom": {
-                  "Ref": "EncryptionKey1B843E66",
+                  "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
                 },
               },
               {
@@ -3057,7 +3057,7 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "SaltDBAE3CEC",
+                "Ref": "CommonEnvironmentSalt326EB889",
               },
             },
             {
@@ -3067,7 +3067,7 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "EncryptionKey1B843E66",
+                "Ref": "CommonEnvironmentEncryptionKeyEEEB3C1C",
               },
             },
             {

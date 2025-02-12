@@ -2,7 +2,6 @@ import * as cdk from 'aws-cdk-lib';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
 
 import { Construct } from 'constructs';
 import { Web } from './constructs/services/web';
@@ -12,6 +11,7 @@ import { Cache } from './constructs/cache';
 import { ClickHouse } from './constructs/services/clickhouse';
 import { LOG_LEVEL, StackConfig, getStackConfig } from './stack-config';
 import { Bastion } from './constructs/bastion';
+import { CommonEnvironment } from './constructs/services/common-environment';
 
 export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   envName: string;
@@ -113,24 +113,12 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       imageTag: clickhouseImageTag,
     });
 
-    /**
-     * Encryption Key and Salt for Langfuse Services
-     */
-    const encryptionKey = new secretsmanager.Secret(this, 'EncryptionKey', {
-      generateSecretString: {
-        passwordLength: 64,
-        excludeCharacters: 'ghijklmnopqrstuvwxyzGHIJKLMNOPQRSTUVWXYZ!@#$%^&*()_+=-[]{};:,.<>?/', // only 0-9, a-f used
-        excludePunctuation: true,
-        excludeUppercase: true,
-        requireEachIncludedType: false,
-      },
-    });
-
-    const salt = new secretsmanager.Secret(this, 'Salt', {
-      generateSecretString: {
-        passwordLength: 32,
-        excludePunctuation: true,
-      },
+    const commonEnvironment = new CommonEnvironment(this, 'CommonEnvironment', {
+      logLevel: langfuseLogLvel,
+      database,
+      cache,
+      clickhouse,
+      bucket: langfuseBucket,
     });
 
     /**
@@ -148,9 +136,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       taskDefMemoryLimitMiB: stackConfig.taskDefMemoryLimitMiB,
       langfuseWebTaskCount: stackConfig.langfuseWebTaskCount,
       imageTag: langfuseImageTag,
-      logLevel: langfuseLogLvel,
-      encryptionKey,
-      salt,
+      commonEnvironment,
       database,
       cache,
       clickhouse,
@@ -166,9 +152,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       taskDefCpu: stackConfig.taskDefCpu,
       taskDefMemoryLimitMiB: stackConfig.taskDefMemoryLimitMiB,
       imageTag: langfuseImageTag,
-      logLevel: langfuseLogLvel,
-      encryptionKey,
-      salt,
+      commonEnvironment,
       database,
       cache,
       clickhouse,

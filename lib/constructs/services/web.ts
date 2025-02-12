@@ -11,7 +11,7 @@ import { Duration, RemovalPolicy } from 'aws-cdk-lib';
 import { Cache } from '../cache';
 import { Database } from '../database';
 import { ClickHouse } from './clickhouse';
-import { LOG_LEVEL } from '../../stack-config';
+import { CommonEnvironment } from './common-environment';
 
 export interface WebProps {
   domainName?: string;
@@ -27,9 +27,7 @@ export interface WebProps {
   taskDefMemoryLimitMiB?: number;
   langfuseWebTaskCount?: number;
   imageTag: string;
-  logLevel: LOG_LEVEL;
-  encryptionKey: secretsmanager.ISecret;
-  salt: secretsmanager.ISecret;
+  commonEnvironment: CommonEnvironment;
 
   database: Database;
   cache: Cache;
@@ -56,9 +54,7 @@ export class Web extends Construct {
       taskDefMemoryLimitMiB,
       langfuseWebTaskCount,
       imageTag,
-      logLevel,
-      encryptionKey,
-      salt,
+      commonEnvironment,
 
       database,
       cache,
@@ -129,44 +125,27 @@ export class Web extends Construct {
       },
     });
 
+    /**
+     * Set environment variables and sectrets
+     * @see https://langfuse.com/self-hosting/configuration
+     */
+    const environment = {
+      NEXTAUTH_URL: this.url,
+      HOSTNAME: '0.0.0.0',
+      ...commonEnvironment.commonEnvironment,
+    };
+
+    const secrets = {
+      NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextAuthSecret),
+      ...commonEnvironment.commonSecrets,
+    };
+
     taskDefinition.addContainer('Container', {
       image: ecs.ContainerImage.fromRegistry(`langfuse/langfuse:${imageTag}`),
       portMappings: [{ containerPort: 3000, name: 'web' }],
       logging: new ecs.AwsLogDriver({ streamPrefix: 'log' }),
-
-      // https://langfuse.com/self-hosting/configuration
-      environment: {
-        NEXTAUTH_URL: this.url,
-        TELEMETRY_ENABLED: 'true',
-        LANGFUSE_ENABLE_EXPERIMENTAL_FEATURES: 'true',
-        HOSTNAME: '0.0.0.0',
-        LANGFUSE_LOG_LEVEL: logLevel,
-
-        DATABASE_NAME: database.databaseName,
-
-        CLICKHOUSE_MIGRATION_URL: 'clickhouse://clickhouse-tcp.local:9000',
-        CLICKHOUSE_URL: 'http://clickhouse-http.local:8123',
-        CLICKHOUSE_USER: clickhouse.clickhouseUser,
-        CLICKHOUSE_CLUSTER_ENABLED: 'false',
-
-        LANGFUSE_S3_EVENT_UPLOAD_BUCKET: bucket.bucketName,
-        LANGFUSE_S3_EVENT_UPLOAD_PREFIX: 'events/',
-        LANGFUSE_S3_MEDIA_UPLOAD_BUCKET: bucket.bucketName,
-        LANGFUSE_S3_MEDIA_UPLOAD_PREFIX: 'media/',
-      },
-      secrets: {
-        NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextAuthSecret),
-        SALT: ecs.Secret.fromSecretsManager(salt),
-        ENCRYPTION_KEY: ecs.Secret.fromSecretsManager(encryptionKey),
-
-        DATABASE_HOST: ecs.Secret.fromSecretsManager(database.secret, 'host'),
-        DATABASE_USERNAME: ecs.Secret.fromSecretsManager(database.secret, 'username'),
-        DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(database.secret, 'password'),
-
-        REDIS_CONNECTION_STRING: ecs.Secret.fromSecretsManager(cache.connectionStringSecret),
-
-        CLICKHOUSE_PASSWORD: ecs.Secret.fromSecretsManager(clickhouse.clickhousePassword),
-      },
+      environment,
+      secrets,
       healthCheck: {
         command: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1'],
         interval: Duration.seconds(15),
