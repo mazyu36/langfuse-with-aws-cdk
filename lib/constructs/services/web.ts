@@ -1,5 +1,6 @@
 import { Construct } from 'constructs';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
+import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
@@ -7,7 +8,7 @@ import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
 import { Cache } from '../cache';
 import { Database } from '../database';
 import { ClickHouse } from './clickhouse';
@@ -16,6 +17,10 @@ import { CommonEnvironment } from './common-environment';
 export interface WebProps {
   domainName?: string;
   hostName?: string;
+
+  disableEmailPasswordAuth?: boolean;
+  enableCognitoAuth?: boolean;
+  certificateForCognito?: acm.ICertificate;
 
   vpc: ec2.IVpc;
   allowedIPv4Cidrs: string[];
@@ -38,16 +43,29 @@ export interface WebProps {
 export class Web extends Construct {
   public readonly url: string;
 
+  private readonly props: WebProps;
+  private readonly hostedZone: route53.IHostedZone | undefined;
+  private readonly albArecord: route53.ARecord;
+
+  private userPool: cognito.IUserPool;
+  private userPoolclient: cognito.IUserPoolClient;
+
   constructor(scope: Construct, id: string, props: WebProps) {
     super(scope, id);
+
+    this.props = props;
 
     const {
       hostName,
       domainName,
+
+      disableEmailPasswordAuth,
+      enableCognitoAuth,
+
+      vpc,
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,
 
-      vpc,
       cluster,
       enableFargateSpot,
       taskDefCpu,
@@ -65,14 +83,14 @@ export class Web extends Construct {
     /**
      * Route53, Application Load Balancer
      */
-    const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
+    this.hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
 
-    const protocol = hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
+    const protocol = this.hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
 
-    const certificate = hostedZone
+    const certificate = this.hostedZone
       ? new acm.Certificate(this, 'Certificate', {
-          domainName: `${hostName}.${hostedZone.zoneName}`,
-          validation: acm.CertificateValidation.fromDns(hostedZone),
+          domainName: `${hostName}.${this.hostedZone.zoneName}`,
+          validation: acm.CertificateValidation.fromDns(this.hostedZone),
         })
       : undefined;
 
@@ -98,13 +116,15 @@ export class Web extends Construct {
     allowedIPv4Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
     allowedIPv6Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
 
-    if (hostedZone) {
-      new route53.ARecord(this, 'AliasRecord', {
-        zone: hostedZone,
+    if (this.hostedZone) {
+      this.albArecord = new route53.ARecord(this, 'AliasRecord', {
+        zone: this.hostedZone,
         recordName: hostName,
         target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
       });
-      this.url = `${protocol.toLowerCase()}://${hostName}.${hostedZone.zoneName}`;
+      this.url = `${protocol.toLowerCase()}://${hostName}.${this.hostedZone.zoneName}`;
+
+      this.createCognitoAuthResource();
     } else {
       this.url = `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
     }
@@ -133,6 +153,13 @@ export class Web extends Construct {
       NEXTAUTH_URL: this.url,
       HOSTNAME: '0.0.0.0',
       ...commonEnvironment.commonEnvironment,
+      ...(disableEmailPasswordAuth && { AUTH_DISABLE_USERNAME_PASSWORD: `${disableEmailPasswordAuth}` }),
+      ...(enableCognitoAuth && {
+        AUTH_COGNITO_CLIENT_ID: this.userPoolclient.userPoolClientId,
+        AUTH_COGNITO_CLIENT_SECRET: this.userPoolclient.userPoolClientSecret.unsafeUnwrap(),
+        AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${this.userPool.userPoolId}`,
+        AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
+      }),
     };
 
     const secrets = {
@@ -202,6 +229,63 @@ export class Web extends Construct {
 
     listener.addTargetGroups('Web', {
       targetGroups: [targetGroup],
+    });
+  }
+
+  private createCognitoAuthResource() {
+    if (!this.props.certificateForCognito || !this.hostedZone) {
+      return;
+    }
+
+    this.userPool = new cognito.UserPool(this, 'UserPool', {
+      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
+      signInAliases: {
+        email: true,
+      },
+      standardAttributes: {
+        email: {
+          required: true,
+          mutable: true,
+        },
+      },
+      selfSignUpEnabled: true,
+      removalPolicy: RemovalPolicy.DESTROY,
+    });
+
+    this.userPoolclient = this.userPool.addClient('CognitoClient', {
+      authFlows: {
+        userPassword: true,
+        userSrp: true,
+      },
+      oAuth: {
+        flows: {
+          authorizationCodeGrant: true,
+        },
+        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
+        callbackUrls: [`${this.url}/api/auth/callback/cognito`],
+      },
+      generateSecret: true,
+    });
+
+    new cognito.CfnManagedLoginBranding(this, 'ManagedLoginBranding', {
+      userPoolId: this.userPool.userPoolId,
+      clientId: this.userPoolclient.userPoolClientId,
+      useCognitoProvidedValues: true,
+    });
+
+    const domain = this.userPool.addDomain('CognitoDomain', {
+      customDomain: {
+        domainName: `auth.${this.props.hostName}.${this.hostedZone.zoneName}`,
+        certificate: this.props.certificateForCognito,
+      },
+      managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
+    });
+    domain.node.addDependency(this.albArecord);
+
+    new route53.ARecord(this, 'CognitoARecord', {
+      zone: this.hostedZone,
+      recordName: `auth.${this.props.hostName}`,
+      target: route53.RecordTarget.fromAlias(new targets.UserPoolDomainTarget(domain)),
     });
   }
 }

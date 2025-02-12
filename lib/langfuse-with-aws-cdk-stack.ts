@@ -1,4 +1,5 @@
 import * as cdk from 'aws-cdk-lib';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as s3 from 'aws-cdk-lib/aws-s3';
@@ -17,13 +18,17 @@ export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   envName: string;
   hostName?: string;
   domainName?: string;
+
+  disableEmailPasswordAuth?: boolean;
+  enableCognitoAuth?: boolean;
+  certificateForCognito?: acm.ICertificate;
 }
 
 export class LangfuseWithAwsCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LangfuseWithAwsCdkStackProps) {
     super(scope, id, props);
 
-    const { envName, hostName, domainName } = props;
+    const { envName, hostName, domainName, disableEmailPasswordAuth, enableCognitoAuth, certificateForCognito } = props;
 
     /**
      * Configurations
@@ -127,9 +132,14 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     const web = new Web(this, 'Web', {
       hostName: hostName,
       domainName: domainName,
+      disableEmailPasswordAuth,
+      enableCognitoAuth,
+      certificateForCognito,
+
       vpc,
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,
+
       cluster,
       enableFargateSpot: stackConfig.enableFargateSpot,
       taskDefCpu: stackConfig.taskDefCpu,
@@ -137,6 +147,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       langfuseWebTaskCount: stackConfig.langfuseWebTaskCount,
       imageTag: langfuseImageTag,
       commonEnvironment,
+
       database,
       cache,
       clickhouse,
