@@ -15,6 +15,21 @@ export interface AppConfig {
    * @default - Use HTTP if not specified.
    */
   domainConfig?: DomainConfig;
+
+  /**
+   * Whether to disable a built-in email/password authentication.
+   *
+   * @default undefined - not disable built-in atuhentication.
+   */
+  disableEmailPasswordAuth?: boolean;
+
+  /**
+   * Whether to enable Amazon Cognito authentication.
+   * When you want to enable Amazon Cognito authentication, you must also specify the `domainConfig`.
+   *
+   * @default undefined - not enable Amazon Cognito authentication.
+   */
+  enableCognitoAuth?: boolean;
 }
 
 export interface DomainConfig {
@@ -40,18 +55,24 @@ const appConfigMap: Record<string, AppConfig> = {
   stg: {
     env: {
       // account: '123456789012',
-      region: 'us-east-1',
-    },
-  },
-  prod: {
-    env: {
-      // account: '123456789012',
-      region: 'us-east-1',
+      region: 'us-west-1',
     },
     domainConfig: {
       hostName: 'langfuse',
       domainName: 'example.com',
     },
+  },
+  prod: {
+    env: {
+      // account: '123456789012',
+      region: 'us-west-2',
+    },
+    domainConfig: {
+      hostName: 'langfuse',
+      domainName: 'example.com',
+    },
+    disableEmailPasswordAuth: true,
+    enableCognitoAuth: true,
   },
 };
 

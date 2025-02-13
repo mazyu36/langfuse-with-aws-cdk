@@ -1,6 +1,8 @@
 import * as cdk from 'aws-cdk-lib';
+import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 
 import { Construct } from 'constructs';
@@ -12,18 +14,23 @@ import { ClickHouse } from './constructs/services/clickhouse';
 import { LOG_LEVEL, StackConfig, getStackConfig } from './stack-config';
 import { Bastion } from './constructs/bastion';
 import { CommonEnvironment } from './constructs/services/common-environment';
+import { CdnLoadBalancer } from './constructs/cdn-load-balancer';
+import { CognitoAuth } from './constructs/auth/cognito-auth';
 
 export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   envName: string;
   hostName?: string;
   domainName?: string;
+
+  disableEmailPasswordAuth?: boolean;
+  certificateForCognito?: acm.ICertificate;
 }
 
 export class LangfuseWithAwsCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LangfuseWithAwsCdkStackProps) {
     super(scope, id, props);
 
-    const { envName, hostName, domainName } = props;
+    const { envName, hostName, domainName, disableEmailPasswordAuth, certificateForCognito } = props;
 
     /**
      * Configurations
@@ -86,7 +93,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Database (PostgreSQL)
+     * Database: Aurora Serverless v2 for PostgreSQL
      */
     const database = new Database(this, 'Database', {
       vpc,
@@ -94,7 +101,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Cache (Valkey)
+     * Cache: ElastiCache for Valkey
      */
     const cache = new Cache(this, 'Cache', {
       vpc,
@@ -102,7 +109,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Fargate Service (ClickHouse)
+     * ClickHouse: Fargate Service, EFS
      */
     const clickhouse = new ClickHouse(this, 'ClickHouse', {
       vpc,
@@ -113,6 +120,9 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       imageTag: clickhouseImageTag,
     });
 
+    /**
+     * Common envrionments and secrets for Langfuse Web/Worker
+     */
     const commonEnvironment = new CommonEnvironment(this, 'CommonEnvironment', {
       logLevel: langfuseLogLvel,
       database,
@@ -122,14 +132,30 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Fargate Service (Langfuse Web)
+     * Langfuse Web: ALB, Fargate Service, Cognito (optional)
      */
-    const web = new Web(this, 'Web', {
-      hostName: hostName,
-      domainName: domainName,
+    const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
+
+    const cdnLoadBalancer = new CdnLoadBalancer(this, 'LoadBalancer', {
+      hostName,
+      hostedZone,
       vpc,
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,
+    });
+
+    const cognitoAuth = certificateForCognito
+      ? new CognitoAuth(this, 'CognitoAuth', {
+          hostedZone,
+          hostName,
+          certificateForCognito,
+          cdnLoadBalancer,
+        })
+      : undefined;
+
+    new Web(this, 'Web', {
+      vpc,
+
       cluster,
       enableFargateSpot: stackConfig.enableFargateSpot,
       taskDefCpu: stackConfig.taskDefCpu,
@@ -137,6 +163,10 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       langfuseWebTaskCount: stackConfig.langfuseWebTaskCount,
       imageTag: langfuseImageTag,
       commonEnvironment,
+      disableEmailPasswordAuth,
+
+      cognitoAuth,
+      cdnLoadBalancer,
       database,
       cache,
       clickhouse,
@@ -144,7 +174,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Fargate Service (Langfuse Worker)
+     * Langfuse Worker: Fargate Service
      */
     new Worker(this, 'Worker', {
       cluster,
@@ -160,7 +190,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Bastion
+     * Bastion: EC2
      */
     if (stackConfig.createBastion) {
       new Bastion(this, 'Bastion', {
@@ -173,7 +203,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
      * Outputs
      */
     new cdk.CfnOutput(this, 'LangfuseURL', {
-      value: web.url,
+      value: cdnLoadBalancer.url,
       description: 'The URL of the Langfuse application',
       exportName: 'LangfuseURL',
     });

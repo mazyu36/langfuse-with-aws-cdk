@@ -3,23 +3,18 @@ import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { Duration, RemovalPolicy } from 'aws-cdk-lib';
+import { Duration, Stack } from 'aws-cdk-lib';
+import { CdnLoadBalancer } from '../cdn-load-balancer';
+import { CognitoAuth } from '../auth/cognito-auth';
 import { Cache } from '../cache';
 import { Database } from '../database';
 import { ClickHouse } from './clickhouse';
 import { CommonEnvironment } from './common-environment';
 
 export interface WebProps {
-  domainName?: string;
-  hostName?: string;
-
   vpc: ec2.IVpc;
-  allowedIPv4Cidrs: string[];
-  allowedIPv6Cidrs: string[];
 
   cluster: ecs.ICluster;
   enableFargateSpot?: boolean;
@@ -28,7 +23,11 @@ export interface WebProps {
   langfuseWebTaskCount?: number;
   imageTag: string;
   commonEnvironment: CommonEnvironment;
+  disableEmailPasswordAuth?: boolean;
 
+  certificateForCognito?: acm.ICertificate;
+  cognitoAuth?: CognitoAuth;
+  cdnLoadBalancer: CdnLoadBalancer;
   database: Database;
   cache: Cache;
   clickhouse: ClickHouse;
@@ -36,18 +35,12 @@ export interface WebProps {
 }
 
 export class Web extends Construct {
-  public readonly url: string;
-
   constructor(scope: Construct, id: string, props: WebProps) {
     super(scope, id);
 
     const {
-      hostName,
-      domainName,
-      allowedIPv4Cidrs,
-      allowedIPv6Cidrs,
-
       vpc,
+
       cluster,
       enableFargateSpot,
       taskDefCpu,
@@ -56,62 +49,15 @@ export class Web extends Construct {
       imageTag,
       commonEnvironment,
 
+      disableEmailPasswordAuth,
+      cognitoAuth,
+      cdnLoadBalancer,
       database,
       cache,
       clickhouse,
       bucket,
     } = props;
 
-    /**
-     * Route53, Application Load Balancer
-     */
-    const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
-
-    const protocol = hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
-
-    const certificate = hostedZone
-      ? new acm.Certificate(this, 'Certificate', {
-          domainName: `${hostName}.${hostedZone.zoneName}`,
-          validation: acm.CertificateValidation.fromDns(hostedZone),
-        })
-      : undefined;
-
-    const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
-      vpc,
-      vpcSubnets: vpc.selectSubnets({ subnets: vpc.publicSubnets }),
-      internetFacing: true,
-    });
-
-    const accessLogBucket = new s3.Bucket(this, 'AlbAccessLogBucket', {
-      autoDeleteObjects: true,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-    alb.logAccessLogs(accessLogBucket, 'AlbAccessLogs');
-
-    const listener = alb.addListener('Listener', {
-      protocol,
-      open: false,
-      defaultAction: elbv2.ListenerAction.fixedResponse(400),
-      certificates: certificate ? [certificate] : undefined,
-    });
-
-    allowedIPv4Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
-    allowedIPv6Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
-
-    if (hostedZone) {
-      new route53.ARecord(this, 'AliasRecord', {
-        zone: hostedZone,
-        recordName: hostName,
-        target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
-      });
-      this.url = `${protocol.toLowerCase()}://${hostName}.${hostedZone.zoneName}`;
-    } else {
-      this.url = `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
-    }
-
-    /**
-     * ECS Service
-     */
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
       cpu: taskDefCpu ?? 1024,
       memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
@@ -125,14 +71,19 @@ export class Web extends Construct {
       },
     });
 
-    /**
-     * Set environment variables and sectrets
-     * @see https://langfuse.com/self-hosting/configuration
-     */
     const environment = {
-      NEXTAUTH_URL: this.url,
+      NEXTAUTH_URL: cdnLoadBalancer.url,
       HOSTNAME: '0.0.0.0',
       ...commonEnvironment.commonEnvironment,
+      ...(disableEmailPasswordAuth && {
+        AUTH_DISABLE_USERNAME_PASSWORD: `${disableEmailPasswordAuth}`,
+      }),
+      ...(cognitoAuth && {
+        AUTH_COGNITO_CLIENT_ID: cognitoAuth.userPoolclient.userPoolClientId,
+        AUTH_COGNITO_CLIENT_SECRET: cognitoAuth.userPoolclient.userPoolClientSecret.unsafeUnwrap(),
+        AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${cognitoAuth.userPool.userPoolId}`,
+        AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
+      }),
     };
 
     const secrets = {
@@ -200,7 +151,7 @@ export class Web extends Construct {
       },
     });
 
-    listener.addTargetGroups('Web', {
+    cdnLoadBalancer.listener.addTargetGroups('Web', {
       targetGroups: [targetGroup],
     });
   }

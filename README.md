@@ -17,6 +17,14 @@ Please also refer to the blog posts I've created about this project.
 * Implements Aurora Serverless V2 for the relational database
 * Uses ElastiCache Valkey for caching and queue management
 * Employs S3 for blob storage
+* Supports optional Cognito integration for authentication (Ref: [Authentication and SSO](https://langfuse.com/self-hosting/authentication-and-sso))
+
+> [!NOTE]
+> Cognito integration uses a custom domain which requires a certificate created in us-east-1 (N. Virginia).
+> Amazon Cognito creates a Amazon CloudFront distribution, secured in transit with your ACM certificate.
+> For more information, see [Using your own domain for managed login](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-add-custom-domain.html).
+>
+> Therefore, the ACM certificate for Cognito is managed in a separate stack deployed in us-east-1.
 
 ## Set Up Your Environment
 
@@ -35,7 +43,14 @@ Run the following commands to deploy your stack:
 ```sh
 npm ci
 npx cdk deploy --context env=dev
+npx cdk deploy --context env=prod --all # if enableCognitoAuth is set to true
 ```
+> [!IMPORTANT]
+> If `enableCognitoAuth` is set to `true`, two stacks will be created：
+> * `UsEast1Stack`: ACM Certificate for Cognito on us-east-1.
+> * `LangfuseWithAwsCdkStack`: Resources for Langfuse services on your region.
+>
+> In this case, you must use the `--all` flag to deploy all stacks.
 
 Deployment takes approximately 20 minutes.
 Upon completion, you'll receive the Langfuse App URL in the output:
@@ -57,6 +72,7 @@ If you no longer need the resources, destroy the stack with:
 
 ```sh
 npx cdk destroy --context env=dev
+npx cdk destroy --context env=prod --all # if enableCognitoAuth is set to true
 ```
 
 ## Example: Testing the Langfuse Application via REST API
