@@ -120,7 +120,7 @@ exports[`snapshot test for dev 1`] = `
             "http://",
             {
               "Fn::GetAtt": [
-                "WebApplicationLoadBalancerCC36E523",
+                "LoadBalancerApplicationLoadBalancer55F016EB",
                 "DNSName",
               ],
             },
@@ -1490,6 +1490,275 @@ exports[`snapshot test for dev 1`] = `
       },
       "Type": "AWS::RDS::DBClusterParameterGroup",
     },
+    "LoadBalancerAlbAccessLogBucket57C7E043": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerAlbAccessLogBucketAutoDeleteObjectsCustomResourceFABF56C8": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "LoadBalancerAlbAccessLogBucketPolicy50101CD9",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "LoadBalancerAlbAccessLogBucket57C7E043",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerAlbAccessLogBucketPolicy50101CD9": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "LoadBalancerAlbAccessLogBucket57C7E043",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "LoadBalancerAlbAccessLogBucket57C7E043",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "LoadBalancerAlbAccessLogBucket57C7E043",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::127311923021:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "LoadBalancerAlbAccessLogBucket57C7E043",
+                        "Arn",
+                      ],
+                    },
+                    "/AlbAccessLogs/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "LoadBalancerAlbAccessLogBucket57C7E043",
+                        "Arn",
+                      ],
+                    },
+                    "/AlbAccessLogs/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "LoadBalancerAlbAccessLogBucket57C7E043",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "LoadBalancerApplicationLoadBalancer55F016EB": {
+      "DependsOn": [
+        "LoadBalancerAlbAccessLogBucketPolicy50101CD9",
+        "VPCPublicSubnet1DefaultRoute91CEF279",
+        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
+        "VPCPublicSubnet2DefaultRouteB7481BBA",
+        "VPCPublicSubnet2RouteTableAssociation5A808732",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+          {
+            "Key": "access_logs.s3.enabled",
+            "Value": "true",
+          },
+          {
+            "Key": "access_logs.s3.bucket",
+            "Value": {
+              "Ref": "LoadBalancerAlbAccessLogBucket57C7E043",
+            },
+          },
+          {
+            "Key": "access_logs.s3.prefix",
+            "Value": "AlbAccessLogs",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "VPCPublicSubnet1SubnetB4246D30",
+          },
+          {
+            "Ref": "VPCPublicSubnet2Subnet74179F39",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "LoadBalancerApplicationLoadBalancerListener6E51561F": {
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "WebTargetGroupFE6444AE",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "LoadBalancerApplicationLoadBalancer55F016EB",
+        },
+        "Port": 80,
+        "Protocol": "HTTP",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MyTestStackLoadBalancerApplicationLoadBalancer429AD2A0",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+          {
+            "CidrIpv6": "::/0",
+            "Description": "from ::/0:80",
+            "FromPort": 80,
+            "IpProtocol": "tcp",
+            "ToPort": 80,
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "LoadBalancerApplicationLoadBalancerSecurityGrouptoMyTestStackWebServiceSecurityGroup7B2F5D5930007E2F29DC": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
     "VPCB9E5F0B4": {
       "Properties": {
         "CidrBlock": "10.0.0.0/16",
@@ -1896,275 +2165,6 @@ sudo service iptables save",
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
-    "WebAlbAccessLogBucket0735D737": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "Tags": [
-          {
-            "Key": "aws-cdk:auto-delete-objects",
-            "Value": "true",
-          },
-        ],
-      },
-      "Type": "AWS::S3::Bucket",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "WebAlbAccessLogBucketAutoDeleteObjectsCustomResource868977E0": {
-      "DeletionPolicy": "Delete",
-      "DependsOn": [
-        "WebAlbAccessLogBucketPolicy7A6A77A0",
-      ],
-      "Properties": {
-        "BucketName": {
-          "Ref": "WebAlbAccessLogBucket0735D737",
-        },
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::S3AutoDeleteObjects",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "WebAlbAccessLogBucketPolicy7A6A77A0": {
-      "Properties": {
-        "Bucket": {
-          "Ref": "WebAlbAccessLogBucket0735D737",
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "s3:PutBucketPolicy",
-                "s3:GetBucket*",
-                "s3:List*",
-                "s3:DeleteObject*",
-              ],
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": {
-                  "Fn::GetAtt": [
-                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
-                    "Arn",
-                  ],
-                },
-              },
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
-                    "WebAlbAccessLogBucket0735D737",
-                    "Arn",
-                  ],
-                },
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Fn::GetAtt": [
-                          "WebAlbAccessLogBucket0735D737",
-                          "Arn",
-                        ],
-                      },
-                      "/*",
-                    ],
-                  ],
-                },
-              ],
-            },
-            {
-              "Action": "s3:PutObject",
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:",
-                      {
-                        "Ref": "AWS::Partition",
-                      },
-                      ":iam::127311923021:root",
-                    ],
-                  ],
-                },
-              },
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    {
-                      "Fn::GetAtt": [
-                        "WebAlbAccessLogBucket0735D737",
-                        "Arn",
-                      ],
-                    },
-                    "/AlbAccessLogs/AWSLogs/123456789012/*",
-                  ],
-                ],
-              },
-            },
-            {
-              "Action": "s3:PutObject",
-              "Condition": {
-                "StringEquals": {
-                  "s3:x-amz-acl": "bucket-owner-full-control",
-                },
-              },
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "delivery.logs.amazonaws.com",
-              },
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    {
-                      "Fn::GetAtt": [
-                        "WebAlbAccessLogBucket0735D737",
-                        "Arn",
-                      ],
-                    },
-                    "/AlbAccessLogs/AWSLogs/123456789012/*",
-                  ],
-                ],
-              },
-            },
-            {
-              "Action": "s3:GetBucketAcl",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "delivery.logs.amazonaws.com",
-              },
-              "Resource": {
-                "Fn::GetAtt": [
-                  "WebAlbAccessLogBucket0735D737",
-                  "Arn",
-                ],
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-      },
-      "Type": "AWS::S3::BucketPolicy",
-    },
-    "WebApplicationLoadBalancerCC36E523": {
-      "DependsOn": [
-        "VPCPublicSubnet1DefaultRoute91CEF279",
-        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
-        "VPCPublicSubnet2DefaultRouteB7481BBA",
-        "VPCPublicSubnet2RouteTableAssociation5A808732",
-        "WebAlbAccessLogBucketPolicy7A6A77A0",
-      ],
-      "Properties": {
-        "LoadBalancerAttributes": [
-          {
-            "Key": "deletion_protection.enabled",
-            "Value": "false",
-          },
-          {
-            "Key": "access_logs.s3.enabled",
-            "Value": "true",
-          },
-          {
-            "Key": "access_logs.s3.bucket",
-            "Value": {
-              "Ref": "WebAlbAccessLogBucket0735D737",
-            },
-          },
-          {
-            "Key": "access_logs.s3.prefix",
-            "Value": "AlbAccessLogs",
-          },
-        ],
-        "Scheme": "internet-facing",
-        "SecurityGroups": [
-          {
-            "Fn::GetAtt": [
-              "WebApplicationLoadBalancerSecurityGroup1DF02136",
-              "GroupId",
-            ],
-          },
-        ],
-        "Subnets": [
-          {
-            "Ref": "VPCPublicSubnet1SubnetB4246D30",
-          },
-          {
-            "Ref": "VPCPublicSubnet2Subnet74179F39",
-          },
-        ],
-        "Type": "application",
-      },
-      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
-    },
-    "WebApplicationLoadBalancerListenerD48857F0": {
-      "Properties": {
-        "DefaultActions": [
-          {
-            "TargetGroupArn": {
-              "Ref": "WebTargetGroupFE6444AE",
-            },
-            "Type": "forward",
-          },
-        ],
-        "LoadBalancerArn": {
-          "Ref": "WebApplicationLoadBalancerCC36E523",
-        },
-        "Port": 80,
-        "Protocol": "HTTP",
-      },
-      "Type": "AWS::ElasticLoadBalancingV2::Listener",
-    },
-    "WebApplicationLoadBalancerSecurityGroup1DF02136": {
-      "Properties": {
-        "GroupDescription": "Automatically created Security Group for ELB MyTestStackWebApplicationLoadBalancerD12C7144",
-        "SecurityGroupIngress": [
-          {
-            "CidrIp": "0.0.0.0/0",
-            "Description": "from 0.0.0.0/0:80",
-            "FromPort": 80,
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-          },
-          {
-            "CidrIpv6": "::/0",
-            "Description": "from ::/0:80",
-            "FromPort": 80,
-            "IpProtocol": "tcp",
-            "ToPort": 80,
-          },
-        ],
-        "VpcId": {
-          "Ref": "VPCB9E5F0B4",
-        },
-      },
-      "Type": "AWS::EC2::SecurityGroup",
-    },
-    "WebApplicationLoadBalancerSecurityGrouptoMyTestStackWebServiceSecurityGroup7B2F5D5930006854D40B": {
-      "Properties": {
-        "Description": "Load balancer to target",
-        "DestinationSecurityGroupId": {
-          "Fn::GetAtt": [
-            "WebServiceSecurityGroupBAF50CC8",
-            "GroupId",
-          ],
-        },
-        "FromPort": 3000,
-        "GroupId": {
-          "Fn::GetAtt": [
-            "WebApplicationLoadBalancerSecurityGroup1DF02136",
-            "GroupId",
-          ],
-        },
-        "IpProtocol": "tcp",
-        "ToPort": 3000,
-      },
-      "Type": "AWS::EC2::SecurityGroupEgress",
-    },
     "WebNextAuthSecretB20A2FF1": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2178,7 +2178,7 @@ sudo service iptables save",
     },
     "WebServiceD04B5F3E": {
       "DependsOn": [
-        "WebApplicationLoadBalancerListenerD48857F0",
+        "LoadBalancerApplicationLoadBalancerListener6E51561F",
         "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
         "WebTaskDefinitionTaskRole96791EDD",
       ],
@@ -2287,7 +2287,7 @@ sudo service iptables save",
       },
       "Type": "AWS::EC2::SecurityGroup",
     },
-    "WebServiceSecurityGroupfromMyTestStackWebApplicationLoadBalancerSecurityGroupE7B4C1F43000D14BA60E": {
+    "WebServiceSecurityGroupfromMyTestStackLoadBalancerApplicationLoadBalancerSecurityGroup694F1F9930004499F4C4": {
       "DependsOn": [
         "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
         "WebTaskDefinitionTaskRole96791EDD",
@@ -2304,7 +2304,7 @@ sudo service iptables save",
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {
           "Fn::GetAtt": [
-            "WebApplicationLoadBalancerSecurityGroup1DF02136",
+            "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
             "GroupId",
           ],
         },
@@ -2358,7 +2358,7 @@ sudo service iptables save",
                       "http://",
                       {
                         "Fn::GetAtt": [
-                          "WebApplicationLoadBalancerCC36E523",
+                          "LoadBalancerApplicationLoadBalancer55F016EB",
                           "DNSName",
                         ],
                       },
@@ -2434,7 +2434,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:latest",
+            "Image": "langfuse/langfuse:3.26",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2936,7 +2936,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:latest",
+            "Image": "langfuse/langfuse-worker:3.26",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {

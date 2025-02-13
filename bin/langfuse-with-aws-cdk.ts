@@ -45,7 +45,6 @@ const stack = new LangfuseWithAwsCdkStack(app, `LangfuseWithAwsCdkStack-${envNam
 
   disableEmailPasswordAuth: appConfig.disableEmailPasswordAuth,
   certificateForCognito: usEast1Stack?.certificateForCognito,
-  enableCognitoAuth: appConfig.enableCognitoAuth,
 });
 
 cdk.Tags.of(stack).add('Environment', envName);

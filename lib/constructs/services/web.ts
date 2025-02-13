@@ -1,30 +1,20 @@
 import { Construct } from 'constructs';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
-import * as cognito from 'aws-cdk-lib/aws-cognito';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
 import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
-import * as route53 from 'aws-cdk-lib/aws-route53';
-import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 import * as secretsmanager from 'aws-cdk-lib/aws-secretsmanager';
-import { Duration, RemovalPolicy, Stack } from 'aws-cdk-lib';
+import { Duration, Stack } from 'aws-cdk-lib';
+import { CdnLoadBalancer } from '../cdn-load-balancer';
+import { CognitoAuth } from '../auth/cognito-auth';
 import { Cache } from '../cache';
 import { Database } from '../database';
 import { ClickHouse } from './clickhouse';
 import { CommonEnvironment } from './common-environment';
 
 export interface WebProps {
-  domainName?: string;
-  hostName?: string;
-
-  disableEmailPasswordAuth?: boolean;
-  enableCognitoAuth?: boolean;
-  certificateForCognito?: acm.ICertificate;
-
   vpc: ec2.IVpc;
-  allowedIPv4Cidrs: string[];
-  allowedIPv6Cidrs: string[];
 
   cluster: ecs.ICluster;
   enableFargateSpot?: boolean;
@@ -34,6 +24,12 @@ export interface WebProps {
   imageTag: string;
   commonEnvironment: CommonEnvironment;
 
+  disableEmailPasswordAuth?: boolean;
+  certificateForCognito?: acm.ICertificate;
+  cognitoAuth?: CognitoAuth;
+
+  cdnLoadBalancer: CdnLoadBalancer;
+
   database: Database;
   cache: Cache;
   clickhouse: ClickHouse;
@@ -41,155 +37,12 @@ export interface WebProps {
 }
 
 export class Web extends Construct {
-  public url: string;
-  private readonly props: WebProps;
-
-  private readonly hostedZone?: route53.IHostedZone;
-  private albARecord?: route53.ARecord;
-  private listener: elbv2.ApplicationListener;
-  private userPool?: cognito.IUserPool;
-  private userPoolclient?: cognito.IUserPoolClient;
-
   constructor(scope: Construct, id: string, props: WebProps) {
     super(scope, id);
 
-    this.props = props;
-
-    this.hostedZone = this.props.domainName
-      ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName: this.props.domainName })
-      : undefined;
-
-    this.createLoadBalancer();
-
-    this.createCognitoAuthResource();
-
-    this.createEcsService();
-  }
-
-  /**
-   * Create Application Load Balancer
-   */
-  private createLoadBalancer() {
-    const { hostName, vpc, allowedIPv4Cidrs, allowedIPv6Cidrs } = this.props;
-
-    const certificate = this.hostedZone
-      ? new acm.Certificate(this, 'Certificate', {
-          domainName: `${hostName}.${this.hostedZone.zoneName}`,
-          validation: acm.CertificateValidation.fromDns(this.hostedZone),
-        })
-      : undefined;
-
-    const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
-      vpc,
-      vpcSubnets: vpc.selectSubnets({ subnets: vpc.publicSubnets }),
-      internetFacing: true,
-    });
-
-    const protocol = this.hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
-
-    const accessLogBucket = new s3.Bucket(this, 'AlbAccessLogBucket', {
-      autoDeleteObjects: true,
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-    alb.logAccessLogs(accessLogBucket, 'AlbAccessLogs');
-
-    this.listener = alb.addListener('Listener', {
-      protocol,
-      open: false,
-      defaultAction: elbv2.ListenerAction.fixedResponse(400),
-      certificates: certificate ? [certificate] : undefined,
-    });
-
-    allowedIPv4Cidrs.forEach(cidr => this.listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
-    allowedIPv6Cidrs.forEach(cidr => this.listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
-
-    this.albARecord = this.hostedZone
-      ? new route53.ARecord(this, 'AliasRecord', {
-          zone: this.hostedZone,
-          recordName: hostName,
-          target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
-        })
-      : undefined;
-
-    this.url = this.hostedZone
-      ? `${protocol.toLowerCase()}://${hostName}.${this.hostedZone.zoneName}`
-      : `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
-  }
-
-  /**
-   * Create Cognito UserPool, Client, and Domain if Cognito Authentication is enabled
-   */
-  private createCognitoAuthResource() {
-    const { enableCognitoAuth, certificateForCognito, hostName } = this.props;
-    if (!enableCognitoAuth) {
-      return;
-    }
-
-    if (!certificateForCognito || !hostName || !this.hostedZone || !this.albARecord) {
-      throw new Error('Cognito authentication requires certificateForCognito, hostName, hostedZone, and albARecord.');
-    }
-
-    this.userPool = new cognito.UserPool(this, 'UserPool', {
-      accountRecovery: cognito.AccountRecovery.EMAIL_ONLY,
-      signInAliases: {
-        email: true,
-      },
-      standardAttributes: {
-        email: {
-          required: true,
-          mutable: true,
-        },
-      },
-      selfSignUpEnabled: true,
-      userVerification: {
-        emailSubject: 'Langfuse - Verify your new account',
-      },
-      removalPolicy: RemovalPolicy.DESTROY,
-    });
-
-    this.userPoolclient = this.userPool.addClient('CognitoClient', {
-      authFlows: {
-        userPassword: true,
-        userSrp: true,
-      },
-      oAuth: {
-        flows: {
-          authorizationCodeGrant: true,
-        },
-        scopes: [cognito.OAuthScope.OPENID, cognito.OAuthScope.EMAIL],
-        callbackUrls: [`${this.url}/api/auth/callback/cognito`],
-      },
-      generateSecret: true,
-    });
-
-    new cognito.CfnManagedLoginBranding(this, 'ManagedLoginBranding', {
-      userPoolId: this.userPool.userPoolId,
-      clientId: this.userPoolclient.userPoolClientId,
-      useCognitoProvidedValues: true,
-    });
-
-    const domain = this.userPool.addDomain('CognitoDomain', {
-      customDomain: {
-        domainName: `auth.${hostName}.${this.hostedZone.zoneName}`,
-        certificate: certificateForCognito,
-      },
-      managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
-    });
-    domain.node.addDependency(this.albARecord);
-
-    new route53.ARecord(this, 'CognitoARecord', {
-      zone: this.hostedZone,
-      recordName: `auth.${hostName}`,
-      target: route53.RecordTarget.fromAlias(new targets.UserPoolDomainTarget(domain)),
-    });
-  }
-
-  /**
-   * Create ECS Service and attached to ALB
-   */
-  private createEcsService() {
     const {
       vpc,
+
       cluster,
       enableFargateSpot,
       taskDefCpu,
@@ -197,13 +50,16 @@ export class Web extends Construct {
       langfuseWebTaskCount,
       imageTag,
       commonEnvironment,
+
+      disableEmailPasswordAuth,
+      cognitoAuth,
+
+      cdnLoadBalancer,
       database,
       cache,
       clickhouse,
       bucket,
-      disableEmailPasswordAuth,
-      enableCognitoAuth,
-    } = this.props;
+    } = props;
 
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
       cpu: taskDefCpu ?? 1024,
@@ -219,20 +75,18 @@ export class Web extends Construct {
     });
 
     const environment = {
-      NEXTAUTH_URL: this.url,
+      NEXTAUTH_URL: cdnLoadBalancer.url,
       HOSTNAME: '0.0.0.0',
       ...commonEnvironment.commonEnvironment,
       ...(disableEmailPasswordAuth && {
         AUTH_DISABLE_USERNAME_PASSWORD: `${disableEmailPasswordAuth}`,
       }),
-      ...(enableCognitoAuth &&
-        this.userPool &&
-        this.userPoolclient && {
-          AUTH_COGNITO_CLIENT_ID: this.userPoolclient.userPoolClientId,
-          AUTH_COGNITO_CLIENT_SECRET: this.userPoolclient.userPoolClientSecret.unsafeUnwrap(),
-          AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${this.userPool.userPoolId}`,
-          AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
-        }),
+      ...(cognitoAuth && {
+        AUTH_COGNITO_CLIENT_ID: cognitoAuth.userPoolclient.userPoolClientId,
+        AUTH_COGNITO_CLIENT_SECRET: cognitoAuth.userPoolclient.userPoolClientSecret.unsafeUnwrap(),
+        AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${cognitoAuth.userPool.userPoolId}`,
+        AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
+      }),
     };
 
     const secrets = {
@@ -300,7 +154,7 @@ export class Web extends Construct {
       },
     });
 
-    this.listener.addTargetGroups('Web', {
+    cdnLoadBalancer.listener.addTargetGroups('Web', {
       targetGroups: [targetGroup],
     });
   }

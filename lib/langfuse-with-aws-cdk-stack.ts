@@ -2,6 +2,7 @@ import * as cdk from 'aws-cdk-lib';
 import * as acm from 'aws-cdk-lib/aws-certificatemanager';
 import * as ec2 from 'aws-cdk-lib/aws-ec2';
 import * as ecs from 'aws-cdk-lib/aws-ecs';
+import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as s3 from 'aws-cdk-lib/aws-s3';
 
 import { Construct } from 'constructs';
@@ -13,6 +14,8 @@ import { ClickHouse } from './constructs/services/clickhouse';
 import { LOG_LEVEL, StackConfig, getStackConfig } from './stack-config';
 import { Bastion } from './constructs/bastion';
 import { CommonEnvironment } from './constructs/services/common-environment';
+import { CdnLoadBalancer } from './constructs/cdn-load-balancer';
+import { CognitoAuth } from './constructs/auth/cognito-auth';
 
 export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   envName: string;
@@ -20,7 +23,6 @@ export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   domainName?: string;
 
   disableEmailPasswordAuth?: boolean;
-  enableCognitoAuth?: boolean;
   certificateForCognito?: acm.ICertificate;
 }
 
@@ -28,7 +30,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LangfuseWithAwsCdkStackProps) {
     super(scope, id, props);
 
-    const { envName, hostName, domainName, disableEmailPasswordAuth, enableCognitoAuth, certificateForCognito } = props;
+    const { envName, hostName, domainName, disableEmailPasswordAuth, certificateForCognito } = props;
 
     /**
      * Configurations
@@ -129,16 +131,27 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     /**
      * Fargate Service (Langfuse Web)
      */
-    const web = new Web(this, 'Web', {
-      hostName: hostName,
-      domainName: domainName,
-      disableEmailPasswordAuth,
-      enableCognitoAuth,
-      certificateForCognito,
+    const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
 
+    const cdnLoadBalancer = new CdnLoadBalancer(this, 'LoadBalancer', {
+      hostName,
+      hostedZone,
       vpc,
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,
+    });
+
+    const cognitoAuth = certificateForCognito
+      ? new CognitoAuth(this, 'CognitoAuth', {
+          hostedZone,
+          hostName,
+          certificateForCognito,
+          cdnLoadBalancer,
+        })
+      : undefined;
+
+    new Web(this, 'Web', {
+      vpc,
 
       cluster,
       enableFargateSpot: stackConfig.enableFargateSpot,
@@ -147,6 +160,11 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       langfuseWebTaskCount: stackConfig.langfuseWebTaskCount,
       imageTag: langfuseImageTag,
       commonEnvironment,
+
+      disableEmailPasswordAuth,
+      cognitoAuth,
+
+      cdnLoadBalancer,
 
       database,
       cache,
@@ -184,7 +202,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
      * Outputs
      */
     new cdk.CfnOutput(this, 'LangfuseURL', {
-      value: web.url,
+      value: cdnLoadBalancer.url,
       description: 'The URL of the Langfuse application',
       exportName: 'LangfuseURL',
     });

@@ -116,6 +116,7 @@ const stackConfigMap: Record<string, StackConfig> = {
     enableFargateSpot: true,
     createBastion: true,
     langfuseLogLevel: LOG_LEVEL.DEBUG,
+    langfuseImageTag: '3.26',
     auroraScalesToZero: true,
     cacheMultiAz: false,
   },

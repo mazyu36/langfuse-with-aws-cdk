@@ -1234,6 +1234,286 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::ECS::Cluster",
     },
+    "CognitoAuthCognitoARecord8E0EB4A4": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::GetAtt": [
+              "CognitoAuthUserPoolCognitoDomainCloudFrontDomainName949DC86A",
+              "DomainDescription.CloudFrontDistribution",
+            ],
+          },
+          "HostedZoneId": {
+            "Fn::FindInMap": [
+              "AWSCloudFrontPartitionHostedZoneIdMap",
+              {
+                "Ref": "AWS::Partition",
+              },
+              "zoneId",
+            ],
+          },
+        },
+        "HostedZoneId": "DUMMY",
+        "Name": "auth.langfuse.example.com.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
+    "CognitoAuthManagedLoginBranding8935A739": {
+      "Properties": {
+        "ClientId": {
+          "Ref": "CognitoAuthUserPoolCognitoClientC424D2CE",
+        },
+        "UseCognitoProvidedValues": true,
+        "UserPoolId": {
+          "Ref": "CognitoAuthUserPool9F7F9231",
+        },
+      },
+      "Type": "AWS::Cognito::ManagedLoginBranding",
+    },
+    "CognitoAuthUserPool9F7F9231": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccountRecoverySetting": {
+          "RecoveryMechanisms": [
+            {
+              "Name": "verified_email",
+              "Priority": 1,
+            },
+          ],
+        },
+        "AdminCreateUserConfig": {
+          "AllowAdminCreateUserOnly": false,
+        },
+        "AutoVerifiedAttributes": [
+          "email",
+        ],
+        "EmailVerificationMessage": "The verification code to your new account is {####}",
+        "EmailVerificationSubject": "Langfuse - Verify your new account",
+        "Schema": [
+          {
+            "Mutable": true,
+            "Name": "email",
+            "Required": true,
+          },
+        ],
+        "SmsVerificationMessage": "The verification code to your new account is {####}",
+        "UsernameAttributes": [
+          "email",
+        ],
+        "VerificationMessageTemplate": {
+          "DefaultEmailOption": "CONFIRM_WITH_CODE",
+          "EmailMessage": "The verification code to your new account is {####}",
+          "EmailSubject": "Langfuse - Verify your new account",
+          "SmsMessage": "The verification code to your new account is {####}",
+        },
+      },
+      "Type": "AWS::Cognito::UserPool",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CognitoAuthUserPoolCognitoClientC424D2CE": {
+      "Properties": {
+        "AllowedOAuthFlows": [
+          "code",
+        ],
+        "AllowedOAuthFlowsUserPoolClient": true,
+        "AllowedOAuthScopes": [
+          "openid",
+          "email",
+        ],
+        "CallbackURLs": [
+          "https://langfuse.example.com/api/auth/callback/cognito",
+        ],
+        "ExplicitAuthFlows": [
+          "ALLOW_USER_PASSWORD_AUTH",
+          "ALLOW_USER_SRP_AUTH",
+          "ALLOW_REFRESH_TOKEN_AUTH",
+        ],
+        "GenerateSecret": true,
+        "SupportedIdentityProviders": [
+          "COGNITO",
+        ],
+        "UserPoolId": {
+          "Ref": "CognitoAuthUserPool9F7F9231",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolClient",
+    },
+    "CognitoAuthUserPoolCognitoClientDescribeCognitoUserPoolClientA9BDD9A4": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CognitoAuthUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicy58081347",
+      ],
+      "Properties": {
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{"region":"us-east-1","service":"CognitoIdentityServiceProvider","action":"describeUserPoolClient","parameters":{"UserPoolId":"",
+              {
+                "Ref": "CognitoAuthUserPool9F7F9231",
+              },
+              "","ClientId":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoClientC424D2CE",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoClientC424D2CE",
+              },
+              ""}}",
+            ],
+          ],
+        },
+        "InstallLatestAwsSdk": false,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{"region":"us-east-1","service":"CognitoIdentityServiceProvider","action":"describeUserPoolClient","parameters":{"UserPoolId":"",
+              {
+                "Ref": "CognitoAuthUserPool9F7F9231",
+              },
+              "","ClientId":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoClientC424D2CE",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoClientC424D2CE",
+              },
+              ""}}",
+            ],
+          ],
+        },
+      },
+      "Type": "Custom::DescribeCognitoUserPoolClient",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CognitoAuthUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicy58081347": {
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "cognito-idp:DescribeUserPoolClient",
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "CognitoAuthUserPool9F7F9231",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "CognitoAuthUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicy58081347",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "CognitoAuthUserPoolCognitoDomainCloudFrontDomainName949DC86A": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "CognitoAuthUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicyBD7C513A",
+        "LoadBalancerAliasRecord6CCD80D3",
+      ],
+      "Properties": {
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"CognitoIdentityServiceProvider","action":"describeUserPoolDomain","parameters":{"Domain":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoDomainFCB03CF3",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoDomainFCB03CF3",
+              },
+              ""}}",
+            ],
+          ],
+        },
+        "InstallLatestAwsSdk": false,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+        "Update": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"CognitoIdentityServiceProvider","action":"describeUserPoolDomain","parameters":{"Domain":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoDomainFCB03CF3",
+              },
+              ""},"physicalResourceId":{"id":"",
+              {
+                "Ref": "CognitoAuthUserPoolCognitoDomainFCB03CF3",
+              },
+              ""}}",
+            ],
+          ],
+        },
+      },
+      "Type": "Custom::UserPoolCloudFrontDomainName",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "CognitoAuthUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicyBD7C513A": {
+      "DependsOn": [
+        "LoadBalancerAliasRecord6CCD80D3",
+      ],
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "cognito-idp:DescribeUserPoolDomain",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "CognitoAuthUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicyBD7C513A",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
+    },
+    "CognitoAuthUserPoolCognitoDomainFCB03CF3": {
+      "DependsOn": [
+        "LoadBalancerAliasRecord6CCD80D3",
+      ],
+      "Properties": {
+        "CustomDomainConfig": {
+          "CertificateArn": {
+            "Fn::ImportValue": "UsEast1Stack-prod:ExportsOutputRefcertificateForCognitoC9901293271F8485",
+          },
+        },
+        "Domain": "auth.langfuse.example.com",
+        "ManagedLoginVersion": 2,
+        "UserPoolId": {
+          "Ref": "CognitoAuthUserPool9F7F9231",
+        },
+      },
+      "Type": "AWS::Cognito::UserPoolDomain",
+    },
     "CommonEnvironmentEncryptionKeyEEEB3C1C": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -1529,6 +1809,331 @@ exports[`snapshot test for prod 1`] = `
         },
       },
       "Type": "AWS::RDS::DBClusterParameterGroup",
+    },
+    "LoadBalancerAlbAccessLogBucket57C7E043": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "Tags": [
+          {
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
+          },
+        ],
+      },
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerAlbAccessLogBucketAutoDeleteObjectsCustomResourceFABF56C8": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "LoadBalancerAlbAccessLogBucketPolicy50101CD9",
+      ],
+      "Properties": {
+        "BucketName": {
+          "Ref": "LoadBalancerAlbAccessLogBucket57C7E043",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerAlbAccessLogBucketPolicy50101CD9": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "LoadBalancerAlbAccessLogBucket57C7E043",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "LoadBalancerAlbAccessLogBucket57C7E043",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "LoadBalancerAlbAccessLogBucket57C7E043",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+            {
+              "Action": "s3:PutObject",
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:",
+                      {
+                        "Ref": "AWS::Partition",
+                      },
+                      ":iam::127311923021:root",
+                    ],
+                  ],
+                },
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "LoadBalancerAlbAccessLogBucket57C7E043",
+                        "Arn",
+                      ],
+                    },
+                    "/AlbAccessLogs/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:PutObject",
+              "Condition": {
+                "StringEquals": {
+                  "s3:x-amz-acl": "bucket-owner-full-control",
+                },
+              },
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    {
+                      "Fn::GetAtt": [
+                        "LoadBalancerAlbAccessLogBucket57C7E043",
+                        "Arn",
+                      ],
+                    },
+                    "/AlbAccessLogs/AWSLogs/123456789012/*",
+                  ],
+                ],
+              },
+            },
+            {
+              "Action": "s3:GetBucketAcl",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "delivery.logs.amazonaws.com",
+              },
+              "Resource": {
+                "Fn::GetAtt": [
+                  "LoadBalancerAlbAccessLogBucket57C7E043",
+                  "Arn",
+                ],
+              },
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "LoadBalancerAliasRecord6CCD80D3": {
+      "Properties": {
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::Join": [
+              "",
+              [
+                "dualstack.",
+                {
+                  "Fn::GetAtt": [
+                    "LoadBalancerApplicationLoadBalancer55F016EB",
+                    "DNSName",
+                  ],
+                },
+              ],
+            ],
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "LoadBalancerApplicationLoadBalancer55F016EB",
+              "CanonicalHostedZoneID",
+            ],
+          },
+        },
+        "HostedZoneId": "DUMMY",
+        "Name": "langfuse.example.com.",
+        "Type": "A",
+      },
+      "Type": "AWS::Route53::RecordSet",
+    },
+    "LoadBalancerApplicationLoadBalancer55F016EB": {
+      "DependsOn": [
+        "LoadBalancerAlbAccessLogBucketPolicy50101CD9",
+        "VPCPublicSubnet1DefaultRoute91CEF279",
+        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
+        "VPCPublicSubnet2DefaultRouteB7481BBA",
+        "VPCPublicSubnet2RouteTableAssociation5A808732",
+      ],
+      "Properties": {
+        "LoadBalancerAttributes": [
+          {
+            "Key": "deletion_protection.enabled",
+            "Value": "false",
+          },
+          {
+            "Key": "access_logs.s3.enabled",
+            "Value": "true",
+          },
+          {
+            "Key": "access_logs.s3.bucket",
+            "Value": {
+              "Ref": "LoadBalancerAlbAccessLogBucket57C7E043",
+            },
+          },
+          {
+            "Key": "access_logs.s3.prefix",
+            "Value": "AlbAccessLogs",
+          },
+        ],
+        "Scheme": "internet-facing",
+        "SecurityGroups": [
+          {
+            "Fn::GetAtt": [
+              "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
+              "GroupId",
+            ],
+          },
+        ],
+        "Subnets": [
+          {
+            "Ref": "VPCPublicSubnet1SubnetB4246D30",
+          },
+          {
+            "Ref": "VPCPublicSubnet2Subnet74179F39",
+          },
+        ],
+        "Type": "application",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+    },
+    "LoadBalancerApplicationLoadBalancerListener6E51561F": {
+      "Properties": {
+        "Certificates": [
+          {
+            "CertificateArn": {
+              "Ref": "LoadBalancerCertificate7ED3CCBA",
+            },
+          },
+        ],
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "WebTargetGroupFE6444AE",
+            },
+            "Type": "forward",
+          },
+        ],
+        "LoadBalancerArn": {
+          "Ref": "LoadBalancerApplicationLoadBalancer55F016EB",
+        },
+        "Port": 443,
+        "Protocol": "HTTPS",
+      },
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+    },
+    "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157": {
+      "Properties": {
+        "GroupDescription": "Automatically created Security Group for ELB MyTestStackLoadBalancerApplicationLoadBalancer429AD2A0",
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:443",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443,
+          },
+          {
+            "CidrIpv6": "::/0",
+            "Description": "from ::/0:443",
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443,
+          },
+        ],
+        "VpcId": {
+          "Ref": "VPCB9E5F0B4",
+        },
+      },
+      "Type": "AWS::EC2::SecurityGroup",
+    },
+    "LoadBalancerApplicationLoadBalancerSecurityGrouptoMyTestStackWebServiceSecurityGroup7B2F5D5930007E2F29DC": {
+      "Properties": {
+        "Description": "Load balancer to target",
+        "DestinationSecurityGroupId": {
+          "Fn::GetAtt": [
+            "WebServiceSecurityGroupBAF50CC8",
+            "GroupId",
+          ],
+        },
+        "FromPort": 3000,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "ToPort": 3000,
+      },
+      "Type": "AWS::EC2::SecurityGroupEgress",
+    },
+    "LoadBalancerCertificate7ED3CCBA": {
+      "Properties": {
+        "DomainName": "langfuse.example.com",
+        "DomainValidationOptions": [
+          {
+            "DomainName": "langfuse.example.com",
+            "HostedZoneId": "DUMMY",
+          },
+        ],
+        "Tags": [
+          {
+            "Key": "Name",
+            "Value": "MyTestStack/LoadBalancer/Certificate",
+          },
+        ],
+        "ValidationMethod": "DNS",
+      },
+      "Type": "AWS::CertificateManager::Certificate",
     },
     "VPCB9E5F0B4": {
       "Properties": {
@@ -1893,368 +2498,6 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::EC2::VPCGatewayAttachment",
     },
-    "WebAlbAccessLogBucket0735D737": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "Tags": [
-          {
-            "Key": "aws-cdk:auto-delete-objects",
-            "Value": "true",
-          },
-        ],
-      },
-      "Type": "AWS::S3::Bucket",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "WebAlbAccessLogBucketAutoDeleteObjectsCustomResource868977E0": {
-      "DeletionPolicy": "Delete",
-      "DependsOn": [
-        "WebAlbAccessLogBucketPolicy7A6A77A0",
-      ],
-      "Properties": {
-        "BucketName": {
-          "Ref": "WebAlbAccessLogBucket0735D737",
-        },
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
-            "Arn",
-          ],
-        },
-      },
-      "Type": "Custom::S3AutoDeleteObjects",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "WebAlbAccessLogBucketPolicy7A6A77A0": {
-      "Properties": {
-        "Bucket": {
-          "Ref": "WebAlbAccessLogBucket0735D737",
-        },
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": [
-                "s3:PutBucketPolicy",
-                "s3:GetBucket*",
-                "s3:List*",
-                "s3:DeleteObject*",
-              ],
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": {
-                  "Fn::GetAtt": [
-                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
-                    "Arn",
-                  ],
-                },
-              },
-              "Resource": [
-                {
-                  "Fn::GetAtt": [
-                    "WebAlbAccessLogBucket0735D737",
-                    "Arn",
-                  ],
-                },
-                {
-                  "Fn::Join": [
-                    "",
-                    [
-                      {
-                        "Fn::GetAtt": [
-                          "WebAlbAccessLogBucket0735D737",
-                          "Arn",
-                        ],
-                      },
-                      "/*",
-                    ],
-                  ],
-                },
-              ],
-            },
-            {
-              "Action": "s3:PutObject",
-              "Effect": "Allow",
-              "Principal": {
-                "AWS": {
-                  "Fn::Join": [
-                    "",
-                    [
-                      "arn:",
-                      {
-                        "Ref": "AWS::Partition",
-                      },
-                      ":iam::127311923021:root",
-                    ],
-                  ],
-                },
-              },
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    {
-                      "Fn::GetAtt": [
-                        "WebAlbAccessLogBucket0735D737",
-                        "Arn",
-                      ],
-                    },
-                    "/AlbAccessLogs/AWSLogs/123456789012/*",
-                  ],
-                ],
-              },
-            },
-            {
-              "Action": "s3:PutObject",
-              "Condition": {
-                "StringEquals": {
-                  "s3:x-amz-acl": "bucket-owner-full-control",
-                },
-              },
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "delivery.logs.amazonaws.com",
-              },
-              "Resource": {
-                "Fn::Join": [
-                  "",
-                  [
-                    {
-                      "Fn::GetAtt": [
-                        "WebAlbAccessLogBucket0735D737",
-                        "Arn",
-                      ],
-                    },
-                    "/AlbAccessLogs/AWSLogs/123456789012/*",
-                  ],
-                ],
-              },
-            },
-            {
-              "Action": "s3:GetBucketAcl",
-              "Effect": "Allow",
-              "Principal": {
-                "Service": "delivery.logs.amazonaws.com",
-              },
-              "Resource": {
-                "Fn::GetAtt": [
-                  "WebAlbAccessLogBucket0735D737",
-                  "Arn",
-                ],
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-      },
-      "Type": "AWS::S3::BucketPolicy",
-    },
-    "WebAliasRecord22320298": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::Join": [
-              "",
-              [
-                "dualstack.",
-                {
-                  "Fn::GetAtt": [
-                    "WebApplicationLoadBalancerCC36E523",
-                    "DNSName",
-                  ],
-                },
-              ],
-            ],
-          },
-          "HostedZoneId": {
-            "Fn::GetAtt": [
-              "WebApplicationLoadBalancerCC36E523",
-              "CanonicalHostedZoneID",
-            ],
-          },
-        },
-        "HostedZoneId": "DUMMY",
-        "Name": "langfuse.example.com.",
-        "Type": "A",
-      },
-      "Type": "AWS::Route53::RecordSet",
-    },
-    "WebApplicationLoadBalancerCC36E523": {
-      "DependsOn": [
-        "VPCPublicSubnet1DefaultRoute91CEF279",
-        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
-        "VPCPublicSubnet2DefaultRouteB7481BBA",
-        "VPCPublicSubnet2RouteTableAssociation5A808732",
-        "WebAlbAccessLogBucketPolicy7A6A77A0",
-      ],
-      "Properties": {
-        "LoadBalancerAttributes": [
-          {
-            "Key": "deletion_protection.enabled",
-            "Value": "false",
-          },
-          {
-            "Key": "access_logs.s3.enabled",
-            "Value": "true",
-          },
-          {
-            "Key": "access_logs.s3.bucket",
-            "Value": {
-              "Ref": "WebAlbAccessLogBucket0735D737",
-            },
-          },
-          {
-            "Key": "access_logs.s3.prefix",
-            "Value": "AlbAccessLogs",
-          },
-        ],
-        "Scheme": "internet-facing",
-        "SecurityGroups": [
-          {
-            "Fn::GetAtt": [
-              "WebApplicationLoadBalancerSecurityGroup1DF02136",
-              "GroupId",
-            ],
-          },
-        ],
-        "Subnets": [
-          {
-            "Ref": "VPCPublicSubnet1SubnetB4246D30",
-          },
-          {
-            "Ref": "VPCPublicSubnet2Subnet74179F39",
-          },
-        ],
-        "Type": "application",
-      },
-      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
-    },
-    "WebApplicationLoadBalancerListenerD48857F0": {
-      "Properties": {
-        "Certificates": [
-          {
-            "CertificateArn": {
-              "Ref": "WebCertificateDA5CDDF6",
-            },
-          },
-        ],
-        "DefaultActions": [
-          {
-            "TargetGroupArn": {
-              "Ref": "WebTargetGroupFE6444AE",
-            },
-            "Type": "forward",
-          },
-        ],
-        "LoadBalancerArn": {
-          "Ref": "WebApplicationLoadBalancerCC36E523",
-        },
-        "Port": 443,
-        "Protocol": "HTTPS",
-      },
-      "Type": "AWS::ElasticLoadBalancingV2::Listener",
-    },
-    "WebApplicationLoadBalancerSecurityGroup1DF02136": {
-      "Properties": {
-        "GroupDescription": "Automatically created Security Group for ELB MyTestStackWebApplicationLoadBalancerD12C7144",
-        "SecurityGroupIngress": [
-          {
-            "CidrIp": "0.0.0.0/0",
-            "Description": "from 0.0.0.0/0:443",
-            "FromPort": 443,
-            "IpProtocol": "tcp",
-            "ToPort": 443,
-          },
-          {
-            "CidrIpv6": "::/0",
-            "Description": "from ::/0:443",
-            "FromPort": 443,
-            "IpProtocol": "tcp",
-            "ToPort": 443,
-          },
-        ],
-        "VpcId": {
-          "Ref": "VPCB9E5F0B4",
-        },
-      },
-      "Type": "AWS::EC2::SecurityGroup",
-    },
-    "WebApplicationLoadBalancerSecurityGrouptoMyTestStackWebServiceSecurityGroup7B2F5D5930006854D40B": {
-      "Properties": {
-        "Description": "Load balancer to target",
-        "DestinationSecurityGroupId": {
-          "Fn::GetAtt": [
-            "WebServiceSecurityGroupBAF50CC8",
-            "GroupId",
-          ],
-        },
-        "FromPort": 3000,
-        "GroupId": {
-          "Fn::GetAtt": [
-            "WebApplicationLoadBalancerSecurityGroup1DF02136",
-            "GroupId",
-          ],
-        },
-        "IpProtocol": "tcp",
-        "ToPort": 3000,
-      },
-      "Type": "AWS::EC2::SecurityGroupEgress",
-    },
-    "WebCertificateDA5CDDF6": {
-      "Properties": {
-        "DomainName": "langfuse.example.com",
-        "DomainValidationOptions": [
-          {
-            "DomainName": "langfuse.example.com",
-            "HostedZoneId": "DUMMY",
-          },
-        ],
-        "Tags": [
-          {
-            "Key": "Name",
-            "Value": "MyTestStack/Web/Certificate",
-          },
-        ],
-        "ValidationMethod": "DNS",
-      },
-      "Type": "AWS::CertificateManager::Certificate",
-    },
-    "WebCognitoARecordA4B8C158": {
-      "Properties": {
-        "AliasTarget": {
-          "DNSName": {
-            "Fn::GetAtt": [
-              "WebUserPoolCognitoDomainCloudFrontDomainNameDDDEA0B9",
-              "DomainDescription.CloudFrontDistribution",
-            ],
-          },
-          "HostedZoneId": {
-            "Fn::FindInMap": [
-              "AWSCloudFrontPartitionHostedZoneIdMap",
-              {
-                "Ref": "AWS::Partition",
-              },
-              "zoneId",
-            ],
-          },
-        },
-        "HostedZoneId": "DUMMY",
-        "Name": "auth.langfuse.example.com.",
-        "Type": "A",
-      },
-      "Type": "AWS::Route53::RecordSet",
-    },
-    "WebManagedLoginBrandingEA2CBB58": {
-      "Properties": {
-        "ClientId": {
-          "Ref": "WebUserPoolCognitoClient1EB4073E",
-        },
-        "UseCognitoProvidedValues": true,
-        "UserPoolId": {
-          "Ref": "WebUserPool193FCF54",
-        },
-      },
-      "Type": "AWS::Cognito::ManagedLoginBranding",
-    },
     "WebNextAuthSecretB20A2FF1": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2268,7 +2511,7 @@ exports[`snapshot test for prod 1`] = `
     },
     "WebServiceD04B5F3E": {
       "DependsOn": [
-        "WebApplicationLoadBalancerListenerD48857F0",
+        "LoadBalancerApplicationLoadBalancerListener6E51561F",
         "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
         "WebTaskDefinitionTaskRole96791EDD",
       ],
@@ -2369,7 +2612,7 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroup",
     },
-    "WebServiceSecurityGroupfromMyTestStackWebApplicationLoadBalancerSecurityGroupE7B4C1F43000D14BA60E": {
+    "WebServiceSecurityGroupfromMyTestStackLoadBalancerApplicationLoadBalancerSecurityGroup694F1F9930004499F4C4": {
       "DependsOn": [
         "WebTaskDefinitionTaskRoleDefaultPolicyADC778FE",
         "WebTaskDefinitionTaskRole96791EDD",
@@ -2386,7 +2629,7 @@ exports[`snapshot test for prod 1`] = `
         "IpProtocol": "tcp",
         "SourceSecurityGroupId": {
           "Fn::GetAtt": [
-            "WebApplicationLoadBalancerSecurityGroup1DF02136",
+            "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
             "GroupId",
           ],
         },
@@ -2498,14 +2741,14 @@ exports[`snapshot test for prod 1`] = `
               {
                 "Name": "AUTH_COGNITO_CLIENT_ID",
                 "Value": {
-                  "Ref": "WebUserPoolCognitoClient1EB4073E",
+                  "Ref": "CognitoAuthUserPoolCognitoClientC424D2CE",
                 },
               },
               {
                 "Name": "AUTH_COGNITO_CLIENT_SECRET",
                 "Value": {
                   "Fn::GetAtt": [
-                    "WebUserPoolCognitoClientDescribeCognitoUserPoolClient7804D790",
+                    "CognitoAuthUserPoolCognitoClientDescribeCognitoUserPoolClientA9BDD9A4",
                     "UserPoolClient.ClientSecret",
                   ],
                 },
@@ -2518,7 +2761,7 @@ exports[`snapshot test for prod 1`] = `
                     [
                       "https://cognito-idp.us-east-1.amazonaws.com/",
                       {
-                        "Ref": "WebUserPool193FCF54",
+                        "Ref": "CognitoAuthUserPool9F7F9231",
                       },
                     ],
                   ],
@@ -2872,249 +3115,6 @@ exports[`snapshot test for prod 1`] = `
         ],
       },
       "Type": "AWS::IAM::Policy",
-    },
-    "WebUserPool193FCF54": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "AccountRecoverySetting": {
-          "RecoveryMechanisms": [
-            {
-              "Name": "verified_email",
-              "Priority": 1,
-            },
-          ],
-        },
-        "AdminCreateUserConfig": {
-          "AllowAdminCreateUserOnly": false,
-        },
-        "AutoVerifiedAttributes": [
-          "email",
-        ],
-        "EmailVerificationMessage": "The verification code to your new account is {####}",
-        "EmailVerificationSubject": "Langfuse - Verify your new account",
-        "Schema": [
-          {
-            "Mutable": true,
-            "Name": "email",
-            "Required": true,
-          },
-        ],
-        "SmsVerificationMessage": "The verification code to your new account is {####}",
-        "UsernameAttributes": [
-          "email",
-        ],
-        "VerificationMessageTemplate": {
-          "DefaultEmailOption": "CONFIRM_WITH_CODE",
-          "EmailMessage": "The verification code to your new account is {####}",
-          "EmailSubject": "Langfuse - Verify your new account",
-          "SmsMessage": "The verification code to your new account is {####}",
-        },
-      },
-      "Type": "AWS::Cognito::UserPool",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "WebUserPoolCognitoClient1EB4073E": {
-      "Properties": {
-        "AllowedOAuthFlows": [
-          "code",
-        ],
-        "AllowedOAuthFlowsUserPoolClient": true,
-        "AllowedOAuthScopes": [
-          "openid",
-          "email",
-        ],
-        "CallbackURLs": [
-          "https://langfuse.example.com/api/auth/callback/cognito",
-        ],
-        "ExplicitAuthFlows": [
-          "ALLOW_USER_PASSWORD_AUTH",
-          "ALLOW_USER_SRP_AUTH",
-          "ALLOW_REFRESH_TOKEN_AUTH",
-        ],
-        "GenerateSecret": true,
-        "SupportedIdentityProviders": [
-          "COGNITO",
-        ],
-        "UserPoolId": {
-          "Ref": "WebUserPool193FCF54",
-        },
-      },
-      "Type": "AWS::Cognito::UserPoolClient",
-    },
-    "WebUserPoolCognitoClientDescribeCognitoUserPoolClient7804D790": {
-      "DeletionPolicy": "Delete",
-      "DependsOn": [
-        "WebUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicyD3051B86",
-      ],
-      "Properties": {
-        "Create": {
-          "Fn::Join": [
-            "",
-            [
-              "{"region":"us-east-1","service":"CognitoIdentityServiceProvider","action":"describeUserPoolClient","parameters":{"UserPoolId":"",
-              {
-                "Ref": "WebUserPool193FCF54",
-              },
-              "","ClientId":"",
-              {
-                "Ref": "WebUserPoolCognitoClient1EB4073E",
-              },
-              ""},"physicalResourceId":{"id":"",
-              {
-                "Ref": "WebUserPoolCognitoClient1EB4073E",
-              },
-              ""}}",
-            ],
-          ],
-        },
-        "InstallLatestAwsSdk": false,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
-            "Arn",
-          ],
-        },
-        "Update": {
-          "Fn::Join": [
-            "",
-            [
-              "{"region":"us-east-1","service":"CognitoIdentityServiceProvider","action":"describeUserPoolClient","parameters":{"UserPoolId":"",
-              {
-                "Ref": "WebUserPool193FCF54",
-              },
-              "","ClientId":"",
-              {
-                "Ref": "WebUserPoolCognitoClient1EB4073E",
-              },
-              ""},"physicalResourceId":{"id":"",
-              {
-                "Ref": "WebUserPoolCognitoClient1EB4073E",
-              },
-              ""}}",
-            ],
-          ],
-        },
-      },
-      "Type": "Custom::DescribeCognitoUserPoolClient",
-      "UpdateReplacePolicy": "Delete",
-    },
-    "WebUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicyD3051B86": {
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "cognito-idp:DescribeUserPoolClient",
-              "Effect": "Allow",
-              "Resource": {
-                "Fn::GetAtt": [
-                  "WebUserPool193FCF54",
-                  "Arn",
-                ],
-              },
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "WebUserPoolCognitoClientDescribeCognitoUserPoolClientCustomResourcePolicyD3051B86",
-        "Roles": [
-          {
-            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
-    "WebUserPoolCognitoDomainAE9AE80E": {
-      "DependsOn": [
-        "WebAliasRecord22320298",
-      ],
-      "Properties": {
-        "CustomDomainConfig": {
-          "CertificateArn": {
-            "Fn::ImportValue": "UsEast1Stack-prod:ExportsOutputRefcertificateForCognitoC9901293271F8485",
-          },
-        },
-        "Domain": "auth.langfuse.example.com",
-        "ManagedLoginVersion": 2,
-        "UserPoolId": {
-          "Ref": "WebUserPool193FCF54",
-        },
-      },
-      "Type": "AWS::Cognito::UserPoolDomain",
-    },
-    "WebUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicy0EAD715B": {
-      "DependsOn": [
-        "WebAliasRecord22320298",
-      ],
-      "Properties": {
-        "PolicyDocument": {
-          "Statement": [
-            {
-              "Action": "cognito-idp:DescribeUserPoolDomain",
-              "Effect": "Allow",
-              "Resource": "*",
-            },
-          ],
-          "Version": "2012-10-17",
-        },
-        "PolicyName": "WebUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicy0EAD715B",
-        "Roles": [
-          {
-            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
-          },
-        ],
-      },
-      "Type": "AWS::IAM::Policy",
-    },
-    "WebUserPoolCognitoDomainCloudFrontDomainNameDDDEA0B9": {
-      "DeletionPolicy": "Delete",
-      "DependsOn": [
-        "WebAliasRecord22320298",
-        "WebUserPoolCognitoDomainCloudFrontDomainNameCustomResourcePolicy0EAD715B",
-      ],
-      "Properties": {
-        "Create": {
-          "Fn::Join": [
-            "",
-            [
-              "{"service":"CognitoIdentityServiceProvider","action":"describeUserPoolDomain","parameters":{"Domain":"",
-              {
-                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
-              },
-              ""},"physicalResourceId":{"id":"",
-              {
-                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
-              },
-              ""}}",
-            ],
-          ],
-        },
-        "InstallLatestAwsSdk": false,
-        "ServiceToken": {
-          "Fn::GetAtt": [
-            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
-            "Arn",
-          ],
-        },
-        "Update": {
-          "Fn::Join": [
-            "",
-            [
-              "{"service":"CognitoIdentityServiceProvider","action":"describeUserPoolDomain","parameters":{"Domain":"",
-              {
-                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
-              },
-              ""},"physicalResourceId":{"id":"",
-              {
-                "Ref": "WebUserPoolCognitoDomainAE9AE80E",
-              },
-              ""}}",
-            ],
-          ],
-        },
-      },
-      "Type": "Custom::UserPoolCloudFrontDomainName",
-      "UpdateReplacePolicy": "Delete",
     },
     "WorkerService3F60922A": {
       "DependsOn": [

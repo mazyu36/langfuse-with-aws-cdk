@@ -41,7 +41,6 @@ test('snapshot test for prod', () => {
 
     disableEmailPasswordAuth: appConfig.disableEmailPasswordAuth,
     certificateForCognito: usEast1Stack?.certificateForCognito,
-    enableCognitoAuth: appConfig.enableCognitoAuth,
   });
 
   // THEN
