@@ -23,13 +23,11 @@ export interface WebProps {
   langfuseWebTaskCount?: number;
   imageTag: string;
   commonEnvironment: CommonEnvironment;
-
   disableEmailPasswordAuth?: boolean;
+
   certificateForCognito?: acm.ICertificate;
   cognitoAuth?: CognitoAuth;
-
   cdnLoadBalancer: CdnLoadBalancer;
-
   database: Database;
   cache: Cache;
   clickhouse: ClickHouse;
@@ -53,7 +51,6 @@ export class Web extends Construct {
 
       disableEmailPasswordAuth,
       cognitoAuth,
-
       cdnLoadBalancer,
       database,
       cache,

@@ -93,7 +93,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Database (PostgreSQL)
+     * Database: Aurora Serverless v2 for PostgreSQL
      */
     const database = new Database(this, 'Database', {
       vpc,
@@ -101,7 +101,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Cache (Valkey)
+     * Cache: ElastiCache for Valkey
      */
     const cache = new Cache(this, 'Cache', {
       vpc,
@@ -109,7 +109,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Fargate Service (ClickHouse)
+     * ClickHouse: Fargate Service, EFS
      */
     const clickhouse = new ClickHouse(this, 'ClickHouse', {
       vpc,
@@ -120,6 +120,9 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       imageTag: clickhouseImageTag,
     });
 
+    /**
+     * Common envrionments and secrets for Langfuse Web/Worker
+     */
     const commonEnvironment = new CommonEnvironment(this, 'CommonEnvironment', {
       logLevel: langfuseLogLvel,
       database,
@@ -129,7 +132,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Fargate Service (Langfuse Web)
+     * Langfuse Web: ALB, Fargate Service, Cognito (optional)
      */
     const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
 
@@ -160,12 +163,10 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       langfuseWebTaskCount: stackConfig.langfuseWebTaskCount,
       imageTag: langfuseImageTag,
       commonEnvironment,
-
       disableEmailPasswordAuth,
+
       cognitoAuth,
-
       cdnLoadBalancer,
-
       database,
       cache,
       clickhouse,
@@ -173,7 +174,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Fargate Service (Langfuse Worker)
+     * Langfuse Worker: Fargate Service
      */
     new Worker(this, 'Worker', {
       cluster,
@@ -189,7 +190,7 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
     });
 
     /**
-     * Bastion
+     * Bastion: EC2
      */
     if (stackConfig.createBastion) {
       new Bastion(this, 'Bastion', {

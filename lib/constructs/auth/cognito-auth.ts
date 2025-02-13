@@ -23,7 +23,9 @@ export class CognitoAuth extends Construct {
     const { certificateForCognito, hostName, hostedZone, cdnLoadBalancer } = props;
 
     if (hostedZone === undefined || hostName === undefined) {
-      throw new Error('');
+      throw new Error(
+        `Unexpected Error (bug): hostedZone and hostName should be defined when certificateForCognito exists, got: hostedZone=${hostedZone}, hostName=${hostName}.`,
+      );
     }
 
     this.userPool = new cognito.UserPool(this, 'UserPool', {
