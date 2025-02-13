@@ -41,52 +41,42 @@ export interface WebProps {
 }
 
 export class Web extends Construct {
-  public readonly url: string;
+  public url: string;
+  private readonly props: WebProps;
 
-  private userPool: cognito.IUserPool;
-  private userPoolclient: cognito.IUserPoolClient;
+  private readonly hostedZone?: route53.IHostedZone;
+  private albARecord?: route53.ARecord;
+  private listener: elbv2.ApplicationListener;
+  private userPool?: cognito.IUserPool;
+  private userPoolclient?: cognito.IUserPoolClient;
 
   constructor(scope: Construct, id: string, props: WebProps) {
     super(scope, id);
 
-    const {
-      hostName,
-      domainName,
+    this.props = props;
 
-      disableEmailPasswordAuth,
-      enableCognitoAuth,
-      certificateForCognito,
+    this.hostedZone = this.props.domainName
+      ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName: this.props.domainName })
+      : undefined;
 
-      vpc,
-      allowedIPv4Cidrs,
-      allowedIPv6Cidrs,
+    this.createLoadBalancer();
 
-      cluster,
-      enableFargateSpot,
-      taskDefCpu,
-      taskDefMemoryLimitMiB,
-      langfuseWebTaskCount,
-      imageTag,
-      commonEnvironment,
+    this.createCognitoAuthResource();
 
-      database,
-      cache,
-      clickhouse,
-      bucket,
-    } = props;
+    this.createEcsService();
+  }
 
-    /**
-     * Route53, Application Load Balancer
-     */
-    const hostedZone = domainName ? route53.HostedZone.fromLookup(this, 'HostedZone', { domainName }) : undefined;
+  /**
+   * Create Application Load Balancer
+   */
+  private createLoadBalancer() {
+    const { hostName, vpc, allowedIPv4Cidrs, allowedIPv6Cidrs } = this.props;
 
-    const protocol = hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
-
-    const certificate = hostedZone
+    const certificate = this.hostedZone
       ? new acm.Certificate(this, 'Certificate', {
-        domainName: `${hostName}.${hostedZone.zoneName}`,
-        validation: acm.CertificateValidation.fromDns(hostedZone),
-      })
+          domainName: `${hostName}.${this.hostedZone.zoneName}`,
+          validation: acm.CertificateValidation.fromDns(this.hostedZone),
+        })
       : undefined;
 
     const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
@@ -95,157 +85,48 @@ export class Web extends Construct {
       internetFacing: true,
     });
 
+    const protocol = this.hostedZone ? elbv2.ApplicationProtocol.HTTPS : elbv2.ApplicationProtocol.HTTP;
+
     const accessLogBucket = new s3.Bucket(this, 'AlbAccessLogBucket', {
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
     });
     alb.logAccessLogs(accessLogBucket, 'AlbAccessLogs');
 
-    const listener = alb.addListener('Listener', {
+    this.listener = alb.addListener('Listener', {
       protocol,
       open: false,
       defaultAction: elbv2.ListenerAction.fixedResponse(400),
       certificates: certificate ? [certificate] : undefined,
     });
 
-    allowedIPv4Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
-    allowedIPv6Cidrs.forEach(cidr => listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
+    allowedIPv4Cidrs.forEach(cidr => this.listener.connections.allowDefaultPortFrom(ec2.Peer.ipv4(cidr)));
+    allowedIPv6Cidrs.forEach(cidr => this.listener.connections.allowDefaultPortFrom(ec2.Peer.ipv6(cidr)));
 
-    if (hostedZone) {
-      const albARecord = new route53.ARecord(this, 'AliasRecord', {
-        zone: hostedZone,
-        recordName: hostName,
-        target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
-      });
-      this.url = `${protocol.toLowerCase()}://${hostName}.${hostedZone.zoneName}`;
+    this.albARecord = this.hostedZone
+      ? new route53.ARecord(this, 'AliasRecord', {
+          zone: this.hostedZone,
+          recordName: hostName,
+          target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
+        })
+      : undefined;
 
-      this.createCognitoAuthResource(
-        hostName!,
-        hostedZone,
-        albARecord,
-        enableCognitoAuth,
-        certificateForCognito,
-      );
-    } else {
-      this.url = `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
-    }
-
-    /**
-     * ECS Service
-     */
-    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
-      cpu: taskDefCpu ?? 1024,
-      memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
-      runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
-    });
-
-    const nextAuthSecret = new secretsmanager.Secret(this, 'NextAuthSecret', {
-      generateSecretString: {
-        passwordLength: 32,
-        excludePunctuation: true,
-      },
-    });
-
-    /**
-     * Set environment variables and sectrets
-     * @see https://langfuse.com/self-hosting/configuration
-     */
-    const environment = {
-      NEXTAUTH_URL: this.url,
-      HOSTNAME: '0.0.0.0',
-      ...commonEnvironment.commonEnvironment,
-      ...(disableEmailPasswordAuth && { AUTH_DISABLE_USERNAME_PASSWORD: `${disableEmailPasswordAuth}` }),
-      ...(enableCognitoAuth && {
-        AUTH_COGNITO_CLIENT_ID: this.userPoolclient.userPoolClientId,
-        AUTH_COGNITO_CLIENT_SECRET: this.userPoolclient.userPoolClientSecret.unsafeUnwrap(),
-        AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${this.userPool.userPoolId}`,
-        AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
-      }),
-    };
-
-    const secrets = {
-      NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextAuthSecret),
-      ...commonEnvironment.commonSecrets,
-    };
-
-    taskDefinition.addContainer('Container', {
-      image: ecs.ContainerImage.fromRegistry(`langfuse/langfuse:${imageTag}`),
-      portMappings: [{ containerPort: 3000, name: 'web' }],
-      logging: new ecs.AwsLogDriver({ streamPrefix: 'log' }),
-      environment,
-      secrets,
-      healthCheck: {
-        command: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1'],
-        interval: Duration.seconds(15),
-        startPeriod: Duration.seconds(30),
-        timeout: Duration.seconds(5),
-        retries: 3,
-      },
-    });
-
-    bucket.grantReadWrite(taskDefinition.taskRole);
-
-    const service = new ecs.FargateService(this, 'Service', {
-      cluster,
-      taskDefinition: taskDefinition,
-      serviceConnectConfiguration: {
-        logDriver: ecs.LogDrivers.awsLogs({
-          streamPrefix: 'service-connect',
-        }),
-      },
-      enableExecuteCommand: true,
-      capacityProviderStrategies: enableFargateSpot
-        ? [
-          {
-            capacityProvider: 'FARGATE',
-            weight: 0,
-          },
-          {
-            capacityProvider: 'FARGATE_SPOT',
-            weight: 1,
-          },
-        ]
-        : undefined,
-      desiredCount: langfuseWebTaskCount,
-    });
-
-    service.connections.allowToDefaultPort(database);
-    service.connections.allowToDefaultPort(cache);
-    service.connections.allowToDefaultPort(clickhouse);
-    service.connections.allowTo(clickhouse, ec2.Port.tcp(9000));
-
-    const targetGroup = new elbv2.ApplicationTargetGroup(this, 'TargetGroup', {
-      vpc,
-      targets: [service],
-      protocol: elbv2.ApplicationProtocol.HTTP,
-      port: 3000,
-      deregistrationDelay: Duration.seconds(10),
-      healthCheck: {
-        interval: Duration.seconds(20),
-        healthyHttpCodes: '200-299,307',
-        healthyThresholdCount: 2,
-        unhealthyThresholdCount: 6,
-      },
-    });
-
-    listener.addTargetGroups('Web', {
-      targetGroups: [targetGroup],
-    });
+    this.url = this.hostedZone
+      ? `${protocol.toLowerCase()}://${hostName}.${this.hostedZone.zoneName}`
+      : `${protocol.toLowerCase()}://${alb.loadBalancerDnsName}`;
   }
 
-
   /**
-   * Create Cognito UserPool, UserPool Client, and domain.
+   * Create Cognito UserPool, Client, and Domain if Cognito Authentication is enabled
    */
-  private createCognitoAuthResource(
-    hostName: string,
-    hostedZone: route53.IHostedZone,
-    albArecord: route53.ARecord,
-    enableCognitoAuth?: boolean,
-    certificateForCognito?: acm.ICertificate,
-  ) {
-    if (!enableCognitoAuth || !certificateForCognito) {
+  private createCognitoAuthResource() {
+    const { enableCognitoAuth, certificateForCognito, hostName } = this.props;
+    if (!enableCognitoAuth) {
       return;
+    }
+
+    if (!certificateForCognito || !hostName || !this.hostedZone || !this.albARecord) {
+      throw new Error('Cognito authentication requires certificateForCognito, hostName, hostedZone, and albARecord.');
     }
 
     this.userPool = new cognito.UserPool(this, 'UserPool', {
@@ -289,17 +170,138 @@ export class Web extends Construct {
 
     const domain = this.userPool.addDomain('CognitoDomain', {
       customDomain: {
-        domainName: `auth.${hostName}.${hostedZone.zoneName}`,
+        domainName: `auth.${hostName}.${this.hostedZone.zoneName}`,
         certificate: certificateForCognito,
       },
       managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
     });
-    domain.node.addDependency(albArecord);
+    domain.node.addDependency(this.albARecord);
 
     new route53.ARecord(this, 'CognitoARecord', {
-      zone: hostedZone,
+      zone: this.hostedZone,
       recordName: `auth.${hostName}`,
       target: route53.RecordTarget.fromAlias(new targets.UserPoolDomainTarget(domain)),
+    });
+  }
+
+  /**
+   * Create ECS Service and attached to ALB
+   */
+  private createEcsService() {
+    const {
+      vpc,
+      cluster,
+      enableFargateSpot,
+      taskDefCpu,
+      taskDefMemoryLimitMiB,
+      langfuseWebTaskCount,
+      imageTag,
+      commonEnvironment,
+      database,
+      cache,
+      clickhouse,
+      bucket,
+      disableEmailPasswordAuth,
+      enableCognitoAuth,
+    } = this.props;
+
+    const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
+      cpu: taskDefCpu ?? 1024,
+      memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
+      runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
+    });
+
+    const nextAuthSecret = new secretsmanager.Secret(this, 'NextAuthSecret', {
+      generateSecretString: {
+        passwordLength: 32,
+        excludePunctuation: true,
+      },
+    });
+
+    const environment = {
+      NEXTAUTH_URL: this.url,
+      HOSTNAME: '0.0.0.0',
+      ...commonEnvironment.commonEnvironment,
+      ...(disableEmailPasswordAuth && {
+        AUTH_DISABLE_USERNAME_PASSWORD: `${disableEmailPasswordAuth}`,
+      }),
+      ...(enableCognitoAuth &&
+        this.userPool &&
+        this.userPoolclient && {
+          AUTH_COGNITO_CLIENT_ID: this.userPoolclient.userPoolClientId,
+          AUTH_COGNITO_CLIENT_SECRET: this.userPoolclient.userPoolClientSecret.unsafeUnwrap(),
+          AUTH_COGNITO_ISSUER: `https://cognito-idp.${Stack.of(this).region}.amazonaws.com/${this.userPool.userPoolId}`,
+          AUTH_COGNITO_ALLOW_ACCOUNT_LINKING: 'true',
+        }),
+    };
+
+    const secrets = {
+      NEXTAUTH_SECRET: ecs.Secret.fromSecretsManager(nextAuthSecret),
+      ...commonEnvironment.commonSecrets,
+    };
+
+    taskDefinition.addContainer('Container', {
+      image: ecs.ContainerImage.fromRegistry(`langfuse/langfuse:${imageTag}`),
+      portMappings: [{ containerPort: 3000, name: 'web' }],
+      logging: new ecs.AwsLogDriver({ streamPrefix: 'log' }),
+      environment,
+      secrets,
+      healthCheck: {
+        command: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3000/ || exit 1'],
+        interval: Duration.seconds(15),
+        startPeriod: Duration.seconds(30),
+        timeout: Duration.seconds(5),
+        retries: 3,
+      },
+    });
+
+    bucket.grantReadWrite(taskDefinition.taskRole);
+
+    const service = new ecs.FargateService(this, 'Service', {
+      cluster,
+      taskDefinition: taskDefinition,
+      serviceConnectConfiguration: {
+        logDriver: ecs.LogDrivers.awsLogs({
+          streamPrefix: 'service-connect',
+        }),
+      },
+      enableExecuteCommand: true,
+      capacityProviderStrategies: enableFargateSpot
+        ? [
+            {
+              capacityProvider: 'FARGATE',
+              weight: 0,
+            },
+            {
+              capacityProvider: 'FARGATE_SPOT',
+              weight: 1,
+            },
+          ]
+        : undefined,
+      desiredCount: langfuseWebTaskCount,
+    });
+
+    service.connections.allowToDefaultPort(database);
+    service.connections.allowToDefaultPort(cache);
+    service.connections.allowToDefaultPort(clickhouse);
+    service.connections.allowTo(clickhouse, ec2.Port.tcp(9000));
+
+    const targetGroup = new elbv2.ApplicationTargetGroup(this, 'TargetGroup', {
+      vpc,
+      targets: [service],
+      protocol: elbv2.ApplicationProtocol.HTTP,
+      port: 3000,
+      deregistrationDelay: Duration.seconds(10),
+      healthCheck: {
+        interval: Duration.seconds(20),
+        healthyHttpCodes: '200-299,307',
+        healthyThresholdCount: 2,
+        unhealthyThresholdCount: 6,
+      },
+    });
+
+    this.listener.addTargetGroups('Web', {
+      targetGroups: [targetGroup],
     });
   }
 }
