@@ -453,32 +453,6 @@ exports[`snapshot test for dev 1`] = `
       "Type": "AWS::SecretsManager::Secret",
       "UpdateReplacePolicy": "Delete",
     },
-    "CacheConnectionStringSecret42484840": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "SecretString": {
-          "Fn::Join": [
-            "",
-            [
-              "rediss://:{{resolve:secretsmanager:",
-              {
-                "Ref": "CacheAuthToken04672416",
-              },
-              ":SecretString:::}}@",
-              {
-                "Fn::GetAtt": [
-                  "Cache18F6EE16",
-                  "PrimaryEndPoint.Address",
-                ],
-              },
-              ":6379",
-            ],
-          ],
-        },
-      },
-      "Type": "AWS::SecretsManager::Secret",
-      "UpdateReplacePolicy": "Delete",
-    },
     "CacheLogGroup527D0E4F": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2387,6 +2361,23 @@ sudo service iptables save",
                 "Value": "langfuse",
               },
               {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Cache18F6EE16",
+                    "PrimaryEndPoint.Address",
+                  ],
+                },
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379",
+              },
+              {
+                "Name": "REDIS_TLS_ENABLED",
+                "Value": "true",
+              },
+              {
                 "Name": "CLICKHOUSE_MIGRATION_URL",
                 "Value": "clickhouse://clickhouse-tcp.local:9000",
               },
@@ -2434,7 +2425,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3.26",
+            "Image": "langfuse/langfuse:3.28.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2515,9 +2506,9 @@ sudo service iptables save",
                 },
               },
               {
-                "Name": "REDIS_CONNECTION_STRING",
+                "Name": "REDIS_AUTH",
                 "ValueFrom": {
-                  "Ref": "CacheConnectionStringSecret42484840",
+                  "Ref": "CacheAuthToken04672416",
                 },
               },
               {
@@ -2635,7 +2626,7 @@ sudo service iptables save",
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "CacheConnectionStringSecret42484840",
+                "Ref": "CacheAuthToken04672416",
               },
             },
             {
@@ -2889,6 +2880,23 @@ sudo service iptables save",
                 "Value": "langfuse",
               },
               {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Cache18F6EE16",
+                    "PrimaryEndPoint.Address",
+                  ],
+                },
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379",
+              },
+              {
+                "Name": "REDIS_TLS_ENABLED",
+                "Value": "true",
+              },
+              {
                 "Name": "CLICKHOUSE_MIGRATION_URL",
                 "Value": "clickhouse://clickhouse-tcp.local:9000",
               },
@@ -2936,7 +2944,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3.26",
+            "Image": "langfuse/langfuse-worker:3.28.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -3011,9 +3019,9 @@ sudo service iptables save",
                 },
               },
               {
-                "Name": "REDIS_CONNECTION_STRING",
+                "Name": "REDIS_AUTH",
                 "ValueFrom": {
-                  "Ref": "CacheConnectionStringSecret42484840",
+                  "Ref": "CacheAuthToken04672416",
                 },
               },
               {
@@ -3126,7 +3134,7 @@ sudo service iptables save",
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "CacheConnectionStringSecret42484840",
+                "Ref": "CacheAuthToken04672416",
               },
             },
             {

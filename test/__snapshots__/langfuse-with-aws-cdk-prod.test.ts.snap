@@ -502,32 +502,6 @@ exports[`snapshot test for prod 1`] = `
       "Type": "AWS::SecretsManager::Secret",
       "UpdateReplacePolicy": "Delete",
     },
-    "CacheConnectionStringSecret42484840": {
-      "DeletionPolicy": "Delete",
-      "Properties": {
-        "SecretString": {
-          "Fn::Join": [
-            "",
-            [
-              "rediss://:{{resolve:secretsmanager:",
-              {
-                "Ref": "CacheAuthToken04672416",
-              },
-              ":SecretString:::}}@",
-              {
-                "Fn::GetAtt": [
-                  "Cache18F6EE16",
-                  "PrimaryEndPoint.Address",
-                ],
-              },
-              ":6379",
-            ],
-          ],
-        },
-      },
-      "Type": "AWS::SecretsManager::Secret",
-      "UpdateReplacePolicy": "Delete",
-    },
     "CacheLogGroup527D0E4F": {
       "DeletionPolicy": "Delete",
       "Properties": {
@@ -2699,6 +2673,23 @@ exports[`snapshot test for prod 1`] = `
                 "Value": "langfuse",
               },
               {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Cache18F6EE16",
+                    "PrimaryEndPoint.Address",
+                  ],
+                },
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379",
+              },
+              {
+                "Name": "REDIS_TLS_ENABLED",
+                "Value": "true",
+              },
+              {
                 "Name": "CLICKHOUSE_MIGRATION_URL",
                 "Value": "clickhouse://clickhouse-tcp.local:9000",
               },
@@ -2783,7 +2774,7 @@ exports[`snapshot test for prod 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3.26",
+            "Image": "langfuse/langfuse:3.28.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2864,9 +2855,9 @@ exports[`snapshot test for prod 1`] = `
                 },
               },
               {
-                "Name": "REDIS_CONNECTION_STRING",
+                "Name": "REDIS_AUTH",
                 "ValueFrom": {
-                  "Ref": "CacheConnectionStringSecret42484840",
+                  "Ref": "CacheAuthToken04672416",
                 },
               },
               {
@@ -2984,7 +2975,7 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "CacheConnectionStringSecret42484840",
+                "Ref": "CacheAuthToken04672416",
               },
             },
             {
@@ -3229,6 +3220,23 @@ exports[`snapshot test for prod 1`] = `
                 "Value": "langfuse",
               },
               {
+                "Name": "REDIS_HOST",
+                "Value": {
+                  "Fn::GetAtt": [
+                    "Cache18F6EE16",
+                    "PrimaryEndPoint.Address",
+                  ],
+                },
+              },
+              {
+                "Name": "REDIS_PORT",
+                "Value": "6379",
+              },
+              {
+                "Name": "REDIS_TLS_ENABLED",
+                "Value": "true",
+              },
+              {
                 "Name": "CLICKHOUSE_MIGRATION_URL",
                 "Value": "clickhouse://clickhouse-tcp.local:9000",
               },
@@ -3276,7 +3284,7 @@ exports[`snapshot test for prod 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3.26",
+            "Image": "langfuse/langfuse-worker:3.28.0",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -3351,9 +3359,9 @@ exports[`snapshot test for prod 1`] = `
                 },
               },
               {
-                "Name": "REDIS_CONNECTION_STRING",
+                "Name": "REDIS_AUTH",
                 "ValueFrom": {
-                  "Ref": "CacheConnectionStringSecret42484840",
+                  "Ref": "CacheAuthToken04672416",
                 },
               },
               {
@@ -3466,7 +3474,7 @@ exports[`snapshot test for prod 1`] = `
               ],
               "Effect": "Allow",
               "Resource": {
-                "Ref": "CacheConnectionStringSecret42484840",
+                "Ref": "CacheAuthToken04672416",
               },
             },
             {
