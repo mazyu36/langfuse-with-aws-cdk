@@ -54,6 +54,10 @@ export class CommonEnvironment extends Construct {
 
       DATABASE_NAME: database.databaseName,
 
+      REDIS_HOST: cache.host,
+      REDIS_PORT: cache.port.toString(),
+      REDIS_TLS_ENABLED: 'true',
+
       CLICKHOUSE_MIGRATION_URL: 'clickhouse://clickhouse-tcp.local:9000',
       CLICKHOUSE_URL: 'http://clickhouse-http.local:8123',
       CLICKHOUSE_USER: clickhouse.clickhouseUser,
@@ -73,7 +77,7 @@ export class CommonEnvironment extends Construct {
       DATABASE_USERNAME: ecs.Secret.fromSecretsManager(database.secret, 'username'),
       DATABASE_PASSWORD: ecs.Secret.fromSecretsManager(database.secret, 'password'),
 
-      REDIS_CONNECTION_STRING: ecs.Secret.fromSecretsManager(cache.connectionStringSecret),
+      REDIS_AUTH: ecs.Secret.fromSecretsManager(cache.secret),
 
       CLICKHOUSE_PASSWORD: ecs.Secret.fromSecretsManager(clickhouse.clickhousePassword),
     };
