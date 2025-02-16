@@ -61,7 +61,10 @@ export class Web extends Construct {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
       cpu: taskDefCpu ?? 1024,
       memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
-      runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
+      runtimePlatform: {
+        cpuArchitecture: ecs.CpuArchitecture.ARM64,
+        operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+      },
     });
 
     const nextAuthSecret = new secretsmanager.Secret(this, 'NextAuthSecret', {
