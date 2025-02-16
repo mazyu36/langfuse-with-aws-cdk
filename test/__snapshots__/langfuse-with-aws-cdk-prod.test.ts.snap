@@ -1009,7 +1009,8 @@ exports[`snapshot test for prod 1`] = `
           "FARGATE",
         ],
         "RuntimePlatform": {
-          "CpuArchitecture": "X86_64",
+          "CpuArchitecture": "ARM64",
+          "OperatingSystemFamily": "LINUX",
         },
         "TaskRoleArn": {
           "Fn::GetAtt": [
@@ -2883,7 +2884,8 @@ exports[`snapshot test for prod 1`] = `
           "FARGATE",
         ],
         "RuntimePlatform": {
-          "CpuArchitecture": "X86_64",
+          "CpuArchitecture": "ARM64",
+          "OperatingSystemFamily": "LINUX",
         },
         "TaskRoleArn": {
           "Fn::GetAtt": [
@@ -3387,7 +3389,8 @@ exports[`snapshot test for prod 1`] = `
           "FARGATE",
         ],
         "RuntimePlatform": {
-          "CpuArchitecture": "X86_64",
+          "CpuArchitecture": "ARM64",
+          "OperatingSystemFamily": "LINUX",
         },
         "TaskRoleArn": {
           "Fn::GetAtt": [

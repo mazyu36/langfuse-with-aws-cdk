@@ -51,7 +51,10 @@ export class ClickHouse extends Construct implements ec2.IConnectable {
     const taskDefinition = new ecs.FargateTaskDefinition(this, 'TaskDefinition', {
       cpu: taskDefCpu ?? 1024,
       memoryLimitMiB: taskDefMemoryLimitMiB ?? 2048,
-      runtimePlatform: { cpuArchitecture: ecs.CpuArchitecture.X86_64 },
+      runtimePlatform: {
+        cpuArchitecture: ecs.CpuArchitecture.ARM64,
+        operatingSystemFamily: ecs.OperatingSystemFamily.LINUX,
+      },
       volumes: [
         {
           name: 'clickhouse',
