@@ -37,13 +37,15 @@ export class Database extends Construct implements ec2.IConnectable {
       enableDataApi: true,
       storageEncrypted: true,
       removalPolicy: RemovalPolicy.DESTROY,
-      parameterGroup: new rds.ParameterGroup(this, 'ParameterGroup', {
-        engine,
-        parameters: {
-          // Terminate idle session for Aurora Serverless V2 auto-pause
-          idle_session_timeout: '60000',
-        },
-      }),
+      parameterGroup: auroraScalesToZero
+        ? // Terminate idle session for Aurora Serverless V2 auto-pause
+          new rds.ParameterGroup(this, 'ParameterGroup', {
+            engine,
+            parameters: {
+              idle_session_timeout: '60000',
+            },
+          })
+        : undefined,
     });
 
     this.connections = cluster.connections;

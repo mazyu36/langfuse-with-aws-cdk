@@ -1574,9 +1574,7 @@ exports[`snapshot test for prod 1`] = `
       "DeletionPolicy": "Delete",
       "Properties": {
         "CopyTagsToSnapshot": true,
-        "DBClusterParameterGroupName": {
-          "Ref": "DatabaseParameterGroup2A921026",
-        },
+        "DBClusterParameterGroupName": "default.aurora-postgresql16",
         "DBSubnetGroupName": {
           "Ref": "DatabaseClusterSubnets5540150D",
         },
@@ -1774,16 +1772,6 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::RDS::DBInstance",
       "UpdateReplacePolicy": "Delete",
-    },
-    "DatabaseParameterGroup2A921026": {
-      "Properties": {
-        "Description": "Cluster parameter group for aurora-postgresql16",
-        "Family": "aurora-postgresql16",
-        "Parameters": {
-          "idle_session_timeout": "60000",
-        },
-      },
-      "Type": "AWS::RDS::DBClusterParameterGroup",
     },
     "LoadBalancerAlbAccessLogBucket57C7E043": {
       "DeletionPolicy": "Delete",
