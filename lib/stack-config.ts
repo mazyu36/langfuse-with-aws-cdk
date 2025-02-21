@@ -1,19 +1,5 @@
 export interface StackConfig {
   /**
-   * List of allowed IPv4 CIDR blocks for accessing the Langfuse Application.
-   *
-   * @default - '0.0.0.0/0'
-   */
-  allowedIPv4Cidrs?: string[];
-
-  /**
-   * List of allowed IPv6 CIDR blocks for accessing the Langfuse Application.
-   *
-   * @default - '::/0'
-   */
-  allowedIPv6Cidrs?: string[];
-
-  /**
    * Whether to use a t4g.nano NAT instance instead of NAT Gateway.
    *
    * @default - Not use a NAT Instance (use a NAT Gateway)

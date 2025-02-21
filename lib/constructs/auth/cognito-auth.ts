@@ -74,7 +74,7 @@ export class CognitoAuth extends Construct {
       },
       managedLoginVersion: cognito.ManagedLoginVersion.NEWER_MANAGED_LOGIN,
     });
-    domain.node.addDependency(cdnLoadBalancer.albARecord!);
+    domain.node.addDependency(cdnLoadBalancer.aRecord!);
 
     new route53.ARecord(this, 'CognitoARecord', {
       zone: hostedZone,
