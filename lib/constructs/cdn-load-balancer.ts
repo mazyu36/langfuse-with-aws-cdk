@@ -7,7 +7,7 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import { RemovalPolicy, Stack } from 'aws-cdk-lib';
+import { RemovalPolicy } from 'aws-cdk-lib';
 import * as cr from 'aws-cdk-lib/custom-resources';
 
 export interface CdnLoadBalancerProps {
@@ -69,7 +69,7 @@ export class CdnLoadBalancer extends Construct {
     const cloudFrontAccessLogBucket = new s3.Bucket(this, 'CloudFrontAccessLogBucket', {
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
-      objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
+      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
@@ -108,7 +108,7 @@ export class CdnLoadBalancer extends Construct {
         physicalResourceId: cr.PhysicalResourceId.of('CloudFront-VPCOrigins-Service-SG'),
       },
       policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
-        resources: [`arn:aws:ec2:${Stack.of(this).region}:${Stack.of(this).account}:security-group/*`],
+        resources: ['*'],
       }),
     });
 

@@ -8,9 +8,6 @@ Please also refer to the blog posts I've created about this project.
 * [Self-Hosting Langfuse v3 on AWS Using CDK (Engilish)](https://dev.to/aws-builders/self-hosting-langfuse-v3-on-aws-using-cdk-508a)
 
 ## Architecture
-
-![Architecture](./img/architecture.drawio.svg)
-
 * Deploys Langfuse Web/Worker Services and ClickHouse using ECS on Fargate
   * Enables service-to-service communication through ECS Service Connect
   * Utilizes EFS for ClickHouse storage
@@ -18,6 +15,16 @@ Please also refer to the blog posts I've created about this project.
 * Uses ElastiCache Valkey for caching and queue management
 * Employs S3 for blob storage
 * Supports optional Cognito integration for authentication (Ref: [Authentication and SSO](https://langfuse.com/self-hosting/authentication-and-sso))
+* Offers CloudFront integration as an option
+  * When CloudFront is enabled, the system utilizes a VPC Origin with an internal Application Load Balancer (ALB) for the web service. Additionally, WAFv2 is implemented to control access based on IP addresses.
+  * When CloudFront is disabled, the system uses an internet-facing Application Load Balancer (ALB).
+
+### Architecture with CloudFront
+![Architecture with CloudFront](./img/architecture-with-cloudfront.drawio.svg)
+
+### Architecture without CloudFront (use intenet-facing ALB)
+![Architecture](./img/architecture.drawio.svg)
+
 
 > [!NOTE]
 > Cognito integration uses a custom domain which requires a certificate created in us-east-1 (N. Virginia).
