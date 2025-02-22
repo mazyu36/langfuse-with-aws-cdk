@@ -69,7 +69,7 @@ export class CdnLoadBalancer extends Construct {
     const cloudFrontAccessLogBucket = new s3.Bucket(this, 'CloudFrontAccessLogBucket', {
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
-      objectOwnership: s3.ObjectOwnership.OBJECT_WRITER,
+      accessControl: s3.BucketAccessControl.LOG_DELIVERY_WRITE,
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {

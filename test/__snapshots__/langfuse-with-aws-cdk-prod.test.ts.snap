@@ -2090,10 +2090,11 @@ exports[`snapshot test for prod 1`] = `
     "LoadBalancerCloudFrontAccessLogBucketE0B85F5E": {
       "DeletionPolicy": "Delete",
       "Properties": {
+        "AccessControl": "LogDeliveryWrite",
         "OwnershipControls": {
           "Rules": [
             {
-              "ObjectOwnership": "BucketOwnerPreferred",
+              "ObjectOwnership": "ObjectWriter",
             },
           ],
         },
@@ -2281,7 +2282,7 @@ exports[`snapshot test for prod 1`] = `
             {
               "Action": "ec2:DescribeSecurityGroups",
               "Effect": "Allow",
-              "Resource": "arn:aws:ec2:us-east-1:123456789012:security-group/*",
+              "Resource": "*",
             },
           ],
           "Version": "2012-10-17",
