@@ -27,31 +27,34 @@ export class UsEast1Stack extends cdk.Stack {
 
     this.certificateForCognito = props.enableCognitoAuth
       ? new acm.Certificate(this, 'certificateForCognito', {
-        domainName: `auth.${hostName}.${hostedZone!.zoneName}`,
-        validation: acm.CertificateValidation.fromDns(hostedZone),
-      })
+          domainName: `auth.${hostName}.${hostedZone!.zoneName}`,
+          validation: acm.CertificateValidation.fromDns(hostedZone),
+        })
       : undefined;
 
     this.certificateForCloudFront = props.enableCloudFrontVpcOrign
       ? new acm.Certificate(this, 'certificateForCloudFront', {
-        domainName: `${hostName}.${hostedZone!.zoneName}`,
-        validation: acm.CertificateValidation.fromDns(hostedZone),
-      })
+          domainName: `${hostName}.${hostedZone!.zoneName}`,
+          validation: acm.CertificateValidation.fromDns(hostedZone),
+        })
       : undefined;
 
     if (props.enableCloudFrontVpcOrign && (props.allowedIPv4Cidrs || props.allowedIPv6Cidrs)) {
+      const ipv4IpSet = props.allowedIPv4Cidrs
+        ? new wafv2.CfnIPSet(this, 'AlloIpv4IPSet', {
+            ipAddressVersion: 'IPV4',
+            scope: 'CLOUDFRONT',
+            addresses: props.allowedIPv4Cidrs,
+          })
+        : undefined;
 
-      const ipv4IpSet = props.allowedIPv4Cidrs ? new wafv2.CfnIPSet(this, 'AlloIpv4IPSet', {
-        ipAddressVersion: 'IPV4',
-        scope: 'CLOUDFRONT',
-        addresses: props.allowedIPv4Cidrs,
-      }) : undefined;
-
-      const ipv6IpSet = props.allowedIPv6Cidrs ? new wafv2.CfnIPSet(this, 'AlloIpv6IPSet', {
-        ipAddressVersion: 'IPV6',
-        scope: 'CLOUDFRONT',
-        addresses: props.allowedIPv6Cidrs,
-      }) : undefined;
+      const ipv6IpSet = props.allowedIPv6Cidrs
+        ? new wafv2.CfnIPSet(this, 'AlloIpv6IPSet', {
+            ipAddressVersion: 'IPV6',
+            scope: 'CLOUDFRONT',
+            addresses: props.allowedIPv6Cidrs,
+          })
+        : undefined;
 
       const rules: wafv2.CfnWebACL.RuleProperty[] = [];
       let priority = 0;

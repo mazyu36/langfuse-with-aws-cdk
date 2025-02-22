@@ -78,12 +78,12 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       ],
       ...(stackConfig.useNatIncetance
         ? {
-          natGatewayProvider: ec2.NatProvider.instanceV2({
-            instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.NANO),
-            associatePublicIpAddress: true,
-          }),
-          natGateways: 1,
-        }
+            natGatewayProvider: ec2.NatProvider.instanceV2({
+              instanceType: ec2.InstanceType.of(ec2.InstanceClass.T4G, ec2.InstanceSize.NANO),
+              associatePublicIpAddress: true,
+            }),
+            natGateways: 1,
+          }
         : undefined),
     });
 
@@ -166,11 +166,11 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
 
     const cognitoAuth = certificateForCognito
       ? new CognitoAuth(this, 'CognitoAuth', {
-        hostedZone,
-        hostName,
-        certificateForCognito,
-        cdnLoadBalancer,
-      })
+          hostedZone,
+          hostName,
+          certificateForCognito,
+          cdnLoadBalancer,
+        })
       : undefined;
 
     new Web(this, 'Web', {

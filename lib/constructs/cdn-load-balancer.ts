@@ -31,7 +31,9 @@ export class CdnLoadBalancer extends Construct {
     super(scope, id);
 
     this.props = props;
-    const { listener, url, aRecord } = this.props.enableCloudFrontVpcOrign ? this.createCloudFrontWithAlb() : this.createAlb();
+    const { listener, url, aRecord } = this.props.enableCloudFrontVpcOrign
+      ? this.createCloudFrontWithAlb()
+      : this.createAlb();
 
     this.listener = listener;
     this.url = url;
@@ -68,20 +70,19 @@ export class CdnLoadBalancer extends Construct {
       autoDeleteObjects: true,
       removalPolicy: RemovalPolicy.DESTROY,
       objectOwnership: s3.ObjectOwnership.BUCKET_OWNER_PREFERRED,
-
     });
 
     const distribution = new cloudfront.Distribution(this, 'Distribution', {
       comment: 'Distribution for Langfuse',
       ...(certificateForCloudFront
         ? {
-          domainNames: [`${hostName}.${hostedZone!.zoneName}`],
-          certificate: certificateForCloudFront,
-        }
+            domainNames: [`${hostName}.${hostedZone!.zoneName}`],
+            certificate: certificateForCloudFront,
+          }
         : {}),
       webAclId: webAclForCloudFrontArn,
       defaultBehavior: {
-        origin: origins.VpcOrigin.withApplicationLoadBalancer(alb,{
+        origin: origins.VpcOrigin.withApplicationLoadBalancer(alb, {
           protocolPolicy: cloudfront.OriginProtocolPolicy.HTTP_ONLY,
           httpPort: 80,
         }),
@@ -106,7 +107,9 @@ export class CdnLoadBalancer extends Construct {
         },
         physicalResourceId: cr.PhysicalResourceId.of('CloudFront-VPCOrigins-Service-SG'),
       },
-      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: [`arn:aws:ec2:${Stack.of(this).region}:${Stack.of(this).account}:security-group/*` ] }),
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({
+        resources: [`arn:aws:ec2:${Stack.of(this).region}:${Stack.of(this).account}:security-group/*`],
+      }),
     });
 
     getSg.node.addDependency(distribution);
@@ -121,15 +124,13 @@ export class CdnLoadBalancer extends Construct {
 
     const aRecord = hostedZone
       ? new route53.ARecord(this, 'AliasRecord', {
-        zone: hostedZone,
-        recordName: hostName,
-        target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
-      })
+          zone: hostedZone,
+          recordName: hostName,
+          target: route53.RecordTarget.fromAlias(new targets.CloudFrontTarget(distribution)),
+        })
       : undefined;
 
-    const url = hostedZone
-      ? `https://${hostName}.${hostedZone.zoneName}`
-      : `https://${distribution.domainName}`;
+    const url = hostedZone ? `https://${hostName}.${hostedZone.zoneName}` : `https://${distribution.domainName}`;
 
     return { listener, url, aRecord };
   }
@@ -142,9 +143,9 @@ export class CdnLoadBalancer extends Construct {
 
     const certificate = hostedZone
       ? new acm.Certificate(this, 'Certificate', {
-        domainName: `${hostName}.${hostedZone.zoneName}`,
-        validation: acm.CertificateValidation.fromDns(hostedZone),
-      })
+          domainName: `${hostName}.${hostedZone.zoneName}`,
+          validation: acm.CertificateValidation.fromDns(hostedZone),
+        })
       : undefined;
 
     const alb = new elbv2.ApplicationLoadBalancer(this, 'ApplicationLoadBalancer', {
@@ -173,10 +174,10 @@ export class CdnLoadBalancer extends Construct {
 
     const aRecord = hostedZone
       ? new route53.ARecord(this, 'AliasRecord', {
-        zone: hostedZone,
-        recordName: hostName,
-        target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
-      })
+          zone: hostedZone,
+          recordName: hostName,
+          target: route53.RecordTarget.fromAlias(new targets.LoadBalancerTarget(alb)),
+        })
       : undefined;
 
     const url = hostedZone
