@@ -32,7 +32,7 @@ test('snapshot test for dev', () => {
       enableCognitoAuth: appConfig.enableCognitoAuth,
       enableCloudFrontVpcOrign: appConfig.enableCloudFrontVpcOrign,
 
-      allowedIPv4Cidrs: appConfig.allowedIPv6Cidrs,
+      allowedIPv4Cidrs: appConfig.allowedIPv4Cidrs,
       allowedIPv6Cidrs: appConfig.allowedIPv6Cidrs,
     });
   }
@@ -43,7 +43,7 @@ test('snapshot test for dev', () => {
       region: 'us-east-1',
     },
     envName,
-    allowedIPv4Cidrs: appConfig.allowedIPv6Cidrs,
+    allowedIPv4Cidrs: appConfig.allowedIPv4Cidrs,
     allowedIPv6Cidrs: appConfig.allowedIPv6Cidrs,
 
     hostName: appConfig.domainConfig?.hostName,

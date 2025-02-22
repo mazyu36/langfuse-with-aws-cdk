@@ -93,7 +93,7 @@ export class UsEast1Stack extends cdk.Stack {
       }
 
       const webAclForCloudFront = new wafv2.CfnWebACL(this, 'WebACL', {
-        defaultAction: { allow: {} },
+        defaultAction: { block: {} },
         scope: 'CLOUDFRONT',
         visibilityConfig: {
           cloudWatchMetricsEnabled: true,

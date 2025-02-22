@@ -36,7 +36,7 @@ if (
     enableCognitoAuth: appConfig.enableCognitoAuth,
     enableCloudFrontVpcOrign: appConfig.enableCloudFrontVpcOrign,
 
-    allowedIPv4Cidrs: appConfig.allowedIPv6Cidrs,
+    allowedIPv4Cidrs: appConfig.allowedIPv4Cidrs,
     allowedIPv6Cidrs: appConfig.allowedIPv6Cidrs,
   });
 }
@@ -47,7 +47,7 @@ const stack = new LangfuseWithAwsCdkStack(app, `LangfuseWithAwsCdkStack-${envNam
     region: appConfig.env?.region ?? process.env.CDK_DEFAULT_REGION,
   },
   envName,
-  allowedIPv4Cidrs: appConfig.allowedIPv6Cidrs,
+  allowedIPv4Cidrs: appConfig.allowedIPv4Cidrs,
   allowedIPv6Cidrs: appConfig.allowedIPv6Cidrs,
 
   hostName: appConfig.domainConfig?.hostName,
