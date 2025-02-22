@@ -45,7 +45,12 @@ export interface AppConfig {
    */
   enableCognitoAuth?: boolean;
 
-  // TODO
+  /**
+   * Whether to enable Amazon CloudFront VPC origin.
+   * If you enable this option, CloudFront Distribution with VPC Origin and ALB will be created.
+   *
+   * @default undefined - not enable CloudFront VPC origin, create Internet-facing ALB instead.
+   */
   enableCloudFrontVpcOrign?: boolean;
 }
 

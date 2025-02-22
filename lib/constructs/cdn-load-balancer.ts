@@ -7,7 +7,8 @@ import * as elbv2 from 'aws-cdk-lib/aws-elasticloadbalancingv2';
 import * as route53 from 'aws-cdk-lib/aws-route53';
 import * as targets from 'aws-cdk-lib/aws-route53-targets';
 import * as s3 from 'aws-cdk-lib/aws-s3';
-import { RemovalPolicy } from 'aws-cdk-lib';
+import { RemovalPolicy, Stack } from 'aws-cdk-lib';
+import * as cr from 'aws-cdk-lib/custom-resources';
 
 export interface CdnLoadBalancerProps {
   hostName?: string;
@@ -37,6 +38,9 @@ export class CdnLoadBalancer extends Construct {
     this.aRecord = aRecord;
   }
 
+  /**
+   * Create CloudFront Distribution with VPC Origin and ALB
+   */
   private createCloudFrontWithAlb() {
     const { hostName, hostedZone, vpc, certificateForCloudFront, webAclForCloudFrontArn } = this.props;
 
@@ -59,7 +63,6 @@ export class CdnLoadBalancer extends Construct {
       open: false,
       defaultAction: elbv2.ListenerAction.fixedResponse(400),
     });
-
 
     const cloudFrontAccessLogBucket = new s3.Bucket(this, 'CloudFrontAccessLogBucket', {
       autoDeleteObjects: true,
@@ -91,6 +94,31 @@ export class CdnLoadBalancer extends Construct {
       logBucket: cloudFrontAccessLogBucket,
     });
 
+    const getSg = new cr.AwsCustomResource(this, 'GetSecurityGroup', {
+      onCreate: {
+        service: 'ec2',
+        action: 'describeSecurityGroups',
+        parameters: {
+          Filters: [
+            { Name: 'vpc-id', Values: [vpc.vpcId] },
+            { Name: 'group-name', Values: ['CloudFront-VPCOrigins-Service-SG'] },
+          ],
+        },
+        physicalResourceId: cr.PhysicalResourceId.of('CloudFront-VPCOrigins-Service-SG'),
+      },
+      policy: cr.AwsCustomResourcePolicy.fromSdkCalls({ resources: [`arn:aws:ec2:${Stack.of(this).region}:${Stack.of(this).account}:security-group/*` ] }),
+    });
+
+    getSg.node.addDependency(distribution);
+
+    const sgVpcOrigins = ec2.SecurityGroup.fromSecurityGroupId(
+      this,
+      'VpcOriginsSecurityGroup',
+      getSg.getResponseField('SecurityGroups.0.GroupId'),
+    );
+
+    listener.connections.allowDefaultPortFrom(sgVpcOrigins);
+
     const aRecord = hostedZone
       ? new route53.ARecord(this, 'AliasRecord', {
         zone: hostedZone,
@@ -106,6 +134,9 @@ export class CdnLoadBalancer extends Construct {
     return { listener, url, aRecord };
   }
 
+  /**
+   * Create intenet facing ALB
+   */
   private createAlb() {
     const { hostName, hostedZone, vpc, allowedIPv4Cidrs, allowedIPv6Cidrs } = this.props;
 
