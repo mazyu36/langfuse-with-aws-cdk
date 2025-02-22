@@ -4,8 +4,12 @@ This project helps you build and deploy [Langfuse v3](https://langfuse.com/chang
 
 Please also refer to the blog posts I've created about this project.
 
-* [AWS CDKを使ってLangfuseをセルフホストする (Japanese)](https://mazyu36.hatenablog.com/entry/2025/02/06/121259)
-* [Self-Hosting Langfuse v3 on AWS Using CDK (Engilish)](https://dev.to/aws-builders/self-hosting-langfuse-v3-on-aws-using-cdk-508a)
+| Language  | Title                                                                            |
+|-----------|----------------------------------------------------------------------------------|
+| Japanese  | [AWS CDKを使ってLangfuseをセルフホストする](https://mazyu36.hatenablog.com/entry/2025/02/06/121259) |
+| Japanese  | [Self hosting Langfuse に Cognito認証を追加する](https://mazyu36.hatenablog.com/entry/2025/02/15/220530) |
+| English   | [Self-Hosting Langfuse v3 on AWS Using CDK](https://dev.to/aws-builders/self-hosting-langfuse-v3-on-aws-using-cdk-508a) |
+| English   | [Adding Cognito Authentication to Self-Hosted Langfuse with AWS CDK](https://dev.to/aws-builders/adding-cognito-authentication-to-self-hosted-langfuse-with-aws-cdk-4gfe) |
 
 ## Architecture
 * Deploys Langfuse Web/Worker Services and ClickHouse using ECS on Fargate
