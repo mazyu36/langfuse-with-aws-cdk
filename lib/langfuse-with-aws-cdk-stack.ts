@@ -19,26 +19,42 @@ import { CognitoAuth } from './constructs/auth/cognito-auth';
 
 export interface LangfuseWithAwsCdkStackProps extends cdk.StackProps {
   envName: string;
+  allowedIPv4Cidrs?: string[];
+  allowedIPv6Cidrs?: string[];
   hostName?: string;
   domainName?: string;
 
   disableEmailPasswordAuth?: boolean;
   certificateForCognito?: acm.ICertificate;
+
+  enableCloudFrontVpcOrign?: boolean;
+  certificateForCloudFront?: acm.ICertificate;
+  webAclForCloudFrontArn?: string;
 }
 
 export class LangfuseWithAwsCdkStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props: LangfuseWithAwsCdkStackProps) {
     super(scope, id, props);
 
-    const { envName, hostName, domainName, disableEmailPasswordAuth, certificateForCognito } = props;
+    const {
+      envName,
+      hostName,
+      domainName,
+      disableEmailPasswordAuth,
+      certificateForCognito,
+      enableCloudFrontVpcOrign,
+      certificateForCloudFront,
+      webAclForCloudFrontArn,
+    } = props;
 
     /**
      * Configurations
      */
     const stackConfig: StackConfig = getStackConfig(envName);
 
-    const allowedIPv4Cidrs = stackConfig.allowedIPv4Cidrs ?? ['0.0.0.0/0'];
-    const allowedIPv6Cidrs = stackConfig.allowedIPv6Cidrs ?? ['::/0'];
+    const allowedIPv4Cidrs = props.allowedIPv4Cidrs ?? ['0.0.0.0/0'];
+    const allowedIPv6Cidrs = props.allowedIPv6Cidrs ?? ['::/0'];
+
     const langfuseImageTag = stackConfig.langfuseImageTag ?? 'latest';
     const clickhouseImageTag = stackConfig.clickhouseImageTag ?? 'latest';
     const langfuseLogLvel = stackConfig.langfuseLogLevel ?? LOG_LEVEL.INFO;
@@ -142,6 +158,10 @@ export class LangfuseWithAwsCdkStack extends cdk.Stack {
       vpc,
       allowedIPv4Cidrs,
       allowedIPv6Cidrs,
+
+      enableCloudFrontVpcOrign,
+      certificateForCloudFront,
+      webAclForCloudFrontArn,
     });
 
     const cognitoAuth = certificateForCognito

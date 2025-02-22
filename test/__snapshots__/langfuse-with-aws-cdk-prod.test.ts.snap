@@ -1932,23 +1932,18 @@ exports[`snapshot test for prod 1`] = `
       "Properties": {
         "AliasTarget": {
           "DNSName": {
-            "Fn::Join": [
-              "",
-              [
-                "dualstack.",
-                {
-                  "Fn::GetAtt": [
-                    "LoadBalancerApplicationLoadBalancer55F016EB",
-                    "DNSName",
-                  ],
-                },
-              ],
+            "Fn::GetAtt": [
+              "LoadBalancerDistributionB9615F1F",
+              "DomainName",
             ],
           },
           "HostedZoneId": {
-            "Fn::GetAtt": [
-              "LoadBalancerApplicationLoadBalancer55F016EB",
-              "CanonicalHostedZoneID",
+            "Fn::FindInMap": [
+              "AWSCloudFrontPartitionHostedZoneIdMap",
+              {
+                "Ref": "AWS::Partition",
+              },
+              "zoneId",
             ],
           },
         },
@@ -1961,10 +1956,6 @@ exports[`snapshot test for prod 1`] = `
     "LoadBalancerApplicationLoadBalancer55F016EB": {
       "DependsOn": [
         "LoadBalancerAlbAccessLogBucketPolicy50101CD9",
-        "VPCPublicSubnet1DefaultRoute91CEF279",
-        "VPCPublicSubnet1RouteTableAssociation0B0896DC",
-        "VPCPublicSubnet2DefaultRouteB7481BBA",
-        "VPCPublicSubnet2RouteTableAssociation5A808732",
       ],
       "Properties": {
         "LoadBalancerAttributes": [
@@ -1987,7 +1978,7 @@ exports[`snapshot test for prod 1`] = `
             "Value": "AlbAccessLogs",
           },
         ],
-        "Scheme": "internet-facing",
+        "Scheme": "internal",
         "SecurityGroups": [
           {
             "Fn::GetAtt": [
@@ -1998,10 +1989,10 @@ exports[`snapshot test for prod 1`] = `
         ],
         "Subnets": [
           {
-            "Ref": "VPCPublicSubnet1SubnetB4246D30",
+            "Ref": "VPCPrivateSubnet1Subnet8BCA10E0",
           },
           {
-            "Ref": "VPCPublicSubnet2Subnet74179F39",
+            "Ref": "VPCPrivateSubnet2SubnetCFCDAA7A",
           },
         ],
         "Type": "application",
@@ -2010,13 +2001,6 @@ exports[`snapshot test for prod 1`] = `
     },
     "LoadBalancerApplicationLoadBalancerListener6E51561F": {
       "Properties": {
-        "Certificates": [
-          {
-            "CertificateArn": {
-              "Ref": "LoadBalancerCertificate7ED3CCBA",
-            },
-          },
-        ],
         "DefaultActions": [
           {
             "TargetGroupArn": {
@@ -2028,35 +2012,40 @@ exports[`snapshot test for prod 1`] = `
         "LoadBalancerArn": {
           "Ref": "LoadBalancerApplicationLoadBalancer55F016EB",
         },
-        "Port": 443,
-        "Protocol": "HTTPS",
+        "Port": 80,
+        "Protocol": "HTTP",
       },
       "Type": "AWS::ElasticLoadBalancingV2::Listener",
     },
     "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157": {
       "Properties": {
         "GroupDescription": "Automatically created Security Group for ELB MyTestStackLoadBalancerApplicationLoadBalancer429AD2A0",
-        "SecurityGroupIngress": [
-          {
-            "CidrIp": "0.0.0.0/0",
-            "Description": "from 0.0.0.0/0:443",
-            "FromPort": 443,
-            "IpProtocol": "tcp",
-            "ToPort": 443,
-          },
-          {
-            "CidrIpv6": "::/0",
-            "Description": "from ::/0:443",
-            "FromPort": 443,
-            "IpProtocol": "tcp",
-            "ToPort": 443,
-          },
-        ],
         "VpcId": {
           "Ref": "VPCB9E5F0B4",
         },
       },
       "Type": "AWS::EC2::SecurityGroup",
+    },
+    "LoadBalancerApplicationLoadBalancerSecurityGroupfromMyTestStackLoadBalancerVpcOriginsSecurityGroupC6970A5180F2F3AC19": {
+      "Properties": {
+        "Description": "from MyTestStackLoadBalancerVpcOriginsSecurityGroupC6970A51:80",
+        "FromPort": 80,
+        "GroupId": {
+          "Fn::GetAtt": [
+            "LoadBalancerApplicationLoadBalancerSecurityGroup14CF9157",
+            "GroupId",
+          ],
+        },
+        "IpProtocol": "tcp",
+        "SourceSecurityGroupId": {
+          "Fn::GetAtt": [
+            "LoadBalancerGetSecurityGroup8F6D88A1",
+            "SecurityGroups.0.GroupId",
+          ],
+        },
+        "ToPort": 80,
+      },
+      "Type": "AWS::EC2::SecurityGroupIngress",
     },
     "LoadBalancerApplicationLoadBalancerSecurityGrouptoMyTestStackWebServiceSecurityGroup7B2F5D5930007E2F29DC": {
       "Properties": {
@@ -2079,24 +2068,233 @@ exports[`snapshot test for prod 1`] = `
       },
       "Type": "AWS::EC2::SecurityGroupEgress",
     },
-    "LoadBalancerCertificate7ED3CCBA": {
+    "LoadBalancerCloudFrontAccessLogBucketAutoDeleteObjectsCustomResourceAB9DBC9C": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "LoadBalancerCloudFrontAccessLogBucketPolicy1144C42B",
+      ],
       "Properties": {
-        "DomainName": "langfuse.example.com",
-        "DomainValidationOptions": [
-          {
-            "DomainName": "langfuse.example.com",
-            "HostedZoneId": "DUMMY",
-          },
-        ],
+        "BucketName": {
+          "Ref": "LoadBalancerCloudFrontAccessLogBucketE0B85F5E",
+        },
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "CustomS3AutoDeleteObjectsCustomResourceProviderHandler9D90184F",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::S3AutoDeleteObjects",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerCloudFrontAccessLogBucketE0B85F5E": {
+      "DeletionPolicy": "Delete",
+      "Properties": {
+        "AccessControl": "LogDeliveryWrite",
+        "OwnershipControls": {
+          "Rules": [
+            {
+              "ObjectOwnership": "ObjectWriter",
+            },
+          ],
+        },
         "Tags": [
           {
-            "Key": "Name",
-            "Value": "MyTestStack/LoadBalancer/Certificate",
+            "Key": "aws-cdk:auto-delete-objects",
+            "Value": "true",
           },
         ],
-        "ValidationMethod": "DNS",
       },
-      "Type": "AWS::CertificateManager::Certificate",
+      "Type": "AWS::S3::Bucket",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerCloudFrontAccessLogBucketPolicy1144C42B": {
+      "Properties": {
+        "Bucket": {
+          "Ref": "LoadBalancerCloudFrontAccessLogBucketE0B85F5E",
+        },
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "s3:PutBucketPolicy",
+                "s3:GetBucket*",
+                "s3:List*",
+                "s3:DeleteObject*",
+              ],
+              "Effect": "Allow",
+              "Principal": {
+                "AWS": {
+                  "Fn::GetAtt": [
+                    "CustomS3AutoDeleteObjectsCustomResourceProviderRole3B1BD092",
+                    "Arn",
+                  ],
+                },
+              },
+              "Resource": [
+                {
+                  "Fn::GetAtt": [
+                    "LoadBalancerCloudFrontAccessLogBucketE0B85F5E",
+                    "Arn",
+                  ],
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      {
+                        "Fn::GetAtt": [
+                          "LoadBalancerCloudFrontAccessLogBucketE0B85F5E",
+                          "Arn",
+                        ],
+                      },
+                      "/*",
+                    ],
+                  ],
+                },
+              ],
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+      },
+      "Type": "AWS::S3::BucketPolicy",
+    },
+    "LoadBalancerDistributionB9615F1F": {
+      "Properties": {
+        "DistributionConfig": {
+          "Aliases": [
+            "langfuse.example.com",
+          ],
+          "Comment": "Distribution for Langfuse",
+          "DefaultCacheBehavior": {
+            "AllowedMethods": [
+              "GET",
+              "HEAD",
+              "OPTIONS",
+              "PUT",
+              "PATCH",
+              "POST",
+              "DELETE",
+            ],
+            "CachePolicyId": "4cc15a8a-d715-48a4-82b8-cc0b614638fe",
+            "Compress": true,
+            "OriginRequestPolicyId": "216adef6-5c7f-47e4-b989-5492eafa07d3",
+            "TargetOriginId": "MyTestStackLoadBalancerDistributionOrigin1DEC1506F",
+            "ViewerProtocolPolicy": "redirect-to-https",
+          },
+          "Enabled": true,
+          "HttpVersion": "http2",
+          "IPV6Enabled": true,
+          "Logging": {
+            "Bucket": {
+              "Fn::GetAtt": [
+                "LoadBalancerCloudFrontAccessLogBucketE0B85F5E",
+                "RegionalDomainName",
+              ],
+            },
+          },
+          "Origins": [
+            {
+              "DomainName": {
+                "Fn::GetAtt": [
+                  "LoadBalancerApplicationLoadBalancer55F016EB",
+                  "DNSName",
+                ],
+              },
+              "Id": "MyTestStackLoadBalancerDistributionOrigin1DEC1506F",
+              "VpcOriginConfig": {
+                "VpcOriginId": {
+                  "Fn::GetAtt": [
+                    "LoadBalancerDistributionOrigin1VpcOriginDDE58CF4",
+                    "Id",
+                  ],
+                },
+              },
+            },
+          ],
+          "ViewerCertificate": {
+            "AcmCertificateArn": {
+              "Fn::ImportValue": "UsEast1Stack-prod:ExportsOutputRefcertificateForCloudFront399DF2A386AF92F0",
+            },
+            "MinimumProtocolVersion": "TLSv1.2_2021",
+            "SslSupportMethod": "sni-only",
+          },
+        },
+      },
+      "Type": "AWS::CloudFront::Distribution",
+    },
+    "LoadBalancerDistributionOrigin1VpcOriginDDE58CF4": {
+      "Properties": {
+        "VpcOriginEndpointConfig": {
+          "Arn": {
+            "Ref": "LoadBalancerApplicationLoadBalancer55F016EB",
+          },
+          "HTTPPort": 80,
+          "Name": "MyTestStackLoadBalancerDistributionOrigin1VpcOrigin4AA44D4B",
+          "OriginProtocolPolicy": "http-only",
+          "OriginSSLProtocols": [
+            "TLSv1.2",
+          ],
+        },
+      },
+      "Type": "AWS::CloudFront::VpcOrigin",
+    },
+    "LoadBalancerGetSecurityGroup8F6D88A1": {
+      "DeletionPolicy": "Delete",
+      "DependsOn": [
+        "LoadBalancerDistributionOrigin1VpcOriginDDE58CF4",
+        "LoadBalancerDistributionB9615F1F",
+        "LoadBalancerGetSecurityGroupCustomResourcePolicyD29DC66D",
+      ],
+      "Properties": {
+        "Create": {
+          "Fn::Join": [
+            "",
+            [
+              "{"service":"ec2","action":"describeSecurityGroups","parameters":{"Filters":[{"Name":"vpc-id","Values":["",
+              {
+                "Ref": "VPCB9E5F0B4",
+              },
+              ""]},{"Name":"group-name","Values":["CloudFront-VPCOrigins-Service-SG"]}]},"physicalResourceId":{"id":"CloudFront-VPCOrigins-Service-SG"}}",
+            ],
+          ],
+        },
+        "InstallLatestAwsSdk": true,
+        "ServiceToken": {
+          "Fn::GetAtt": [
+            "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+            "Arn",
+          ],
+        },
+      },
+      "Type": "Custom::AWS",
+      "UpdateReplacePolicy": "Delete",
+    },
+    "LoadBalancerGetSecurityGroupCustomResourcePolicyD29DC66D": {
+      "DependsOn": [
+        "LoadBalancerDistributionOrigin1VpcOriginDDE58CF4",
+        "LoadBalancerDistributionB9615F1F",
+      ],
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": "ec2:DescribeSecurityGroups",
+              "Effect": "Allow",
+              "Resource": "*",
+            },
+          ],
+          "Version": "2012-10-17",
+        },
+        "PolicyName": "LoadBalancerGetSecurityGroupCustomResourcePolicyD29DC66D",
+        "Roles": [
+          {
+            "Ref": "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2",
+          },
+        ],
+      },
+      "Type": "AWS::IAM::Policy",
     },
     "VPCB9E5F0B4": {
       "Properties": {

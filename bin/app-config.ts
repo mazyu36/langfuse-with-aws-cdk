@@ -10,6 +10,20 @@ export interface AppConfig {
   env?: Environment;
 
   /**
+   * List of allowed IPv4 CIDR blocks for accessing the Langfuse Application.
+   *
+   * @default - '0.0.0.0/0'
+   */
+  allowedIPv4Cidrs?: string[];
+
+  /**
+   * List of allowed IPv6 CIDR blocks for accessing the Langfuse Application.
+   *
+   * @default - '::/0'
+   */
+  allowedIPv6Cidrs?: string[];
+
+  /**
    * Custom domain settings for Langfuse Application.
    *
    * @default - Use HTTP if not specified.
@@ -30,6 +44,14 @@ export interface AppConfig {
    * @default undefined - not enable Amazon Cognito authentication.
    */
   enableCognitoAuth?: boolean;
+
+  /**
+   * Whether to enable Amazon CloudFront VPC origin.
+   * If you enable this option, CloudFront Distribution with VPC Origin and ALB will be created.
+   *
+   * @default undefined - not enable CloudFront VPC origin, create Internet-facing ALB instead.
+   */
+  enableCloudFrontVpcOrign?: boolean;
 }
 
 export interface DomainConfig {
@@ -65,7 +87,7 @@ const appConfigMap: Record<string, AppConfig> = {
   prod: {
     env: {
       // account: '123456789012',
-      region: 'us-west-2',
+      region: 'ap-northeast-1',
     },
     domainConfig: {
       hostName: 'langfuse',
@@ -73,6 +95,7 @@ const appConfigMap: Record<string, AppConfig> = {
     },
     disableEmailPasswordAuth: true,
     enableCognitoAuth: true,
+    enableCloudFrontVpcOrign: true,
   },
 };
 
