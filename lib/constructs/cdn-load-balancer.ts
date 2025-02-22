@@ -95,6 +95,7 @@ export class CdnLoadBalancer extends Construct {
       logBucket: cloudFrontAccessLogBucket,
     });
 
+    // Ref: https://docs.aws.amazon.com/cdk/api/v2/docs/aws-cdk-lib.aws_cloudfront_origins-readme.html#restrict-traffic-coming-to-the-vpc-origin
     const getSg = new cr.AwsCustomResource(this, 'GetSecurityGroup', {
       onCreate: {
         service: 'ec2',
