@@ -26,16 +26,16 @@ Please also refer to the blog posts I've created about this project.
 ### Architecture with CloudFront
 ![Architecture with CloudFront](./img/architecture-with-cloudfront.drawio.svg)
 
-### Architecture without CloudFront (use intenet-facing ALB)
+### Architecture intenet-facing ALB (without CloudFront)
 ![Architecture](./img/architecture.drawio.svg)
 
 
 > [!NOTE]
-> Cognito integration uses a custom domain which requires a certificate created in us-east-1 (N. Virginia).
-> Amazon Cognito creates a Amazon CloudFront distribution, secured in transit with your ACM certificate.
-> For more information, see [Using your own domain for managed login](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-add-custom-domain.html).
+> The following resources must be created in us-east-1 (N. Virginia) region due to service requirements:
+> - ACM certificate and WAF Web ACL for CloudFront.
+> - ACM certificate for Cognito custom domain (this is required because Cognito internally creates a CloudFront Distribution. For more information, see [Using your own domain for managed login](https://docs.aws.amazon.com/cognito/latest/developerguide/cognito-user-pools-add-custom-domain.html).)
 >
-> Therefore, the ACM certificate for Cognito is managed in a separate stack deployed in us-east-1.
+> Therefore, these resources are managed in a separate stack deployed in us-east-1.
 
 ## Set Up Your Environment
 
@@ -54,7 +54,7 @@ Run the following commands to deploy your stack:
 ```sh
 npm ci
 npx cdk deploy --context env=dev
-npx cdk deploy --context env=prod --all # if enableCognitoAuth is set to true
+npx cdk deploy --context env=prod --all # when CloudFront or Cognito Authentication is enabled
 ```
 > [!IMPORTANT]
 > If `enableCognitoAuth` is set to `true`, two stacks will be created：
@@ -83,7 +83,7 @@ If you no longer need the resources, destroy the stack with:
 
 ```sh
 npx cdk destroy --context env=dev
-npx cdk destroy --context env=prod --all # if enableCognitoAuth is set to true
+npx cdk destroy --context env=prod --all # when CloudFront or Cognito Authentication is enabled
 ```
 
 ## Example: Testing the Langfuse Application via REST API
