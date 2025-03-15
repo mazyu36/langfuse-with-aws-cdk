@@ -2426,7 +2426,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3.28.0",
+            "Image": "langfuse/langfuse:3.42.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2939,14 +2939,14 @@ sudo service iptables save",
             "HealthCheck": {
               "Command": [
                 "CMD-SHELL",
-                "wget --no-verbose --tries=1 --spider http://localhost:3030/ || exit 1",
+                "wget --no-verbose --tries=1 --spider http://\${HOSTNAME}:3030/ || exit 1",
               ],
               "Interval": 15,
               "Retries": 3,
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3.28.0",
+            "Image": "langfuse/langfuse-worker:3.42.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
