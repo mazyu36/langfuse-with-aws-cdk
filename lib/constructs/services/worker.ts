@@ -68,7 +68,7 @@ export class Worker extends Construct {
       environment,
       secrets,
       healthCheck: {
-        command: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://localhost:3030/ || exit 1'],
+        command: ['CMD-SHELL', 'wget --no-verbose --tries=1 --spider http://${HOSTNAME}:3030/ || exit 1'],
         interval: Duration.seconds(15),
         startPeriod: Duration.seconds(30),
         timeout: Duration.seconds(5),
