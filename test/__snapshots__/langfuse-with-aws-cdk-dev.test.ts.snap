@@ -2426,7 +2426,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3.42.1",
+            "Image": "langfuse/langfuse:3.49.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2946,7 +2946,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3.42.1",
+            "Image": "langfuse/langfuse-worker:3.49.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
