@@ -1223,7 +1223,7 @@ exports[`snapshot test for dev 1`] = `
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs22.x",
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
@@ -2426,7 +2426,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3.49.1",
+            "Image": "langfuse/langfuse:3.65.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2946,7 +2946,7 @@ sudo service iptables save",
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3.49.1",
+            "Image": "langfuse/langfuse-worker:3.65.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {

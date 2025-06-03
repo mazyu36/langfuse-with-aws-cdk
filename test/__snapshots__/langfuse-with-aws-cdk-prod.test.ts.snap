@@ -154,10 +154,29 @@ exports[`snapshot test for prod 1`] = `
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs22.x",
         "Timeout": 120,
       },
       "Type": "AWS::Lambda::Function",
+    },
+    "AWS679f53fac002430cb0da5b7982bd2287LogGroup449FB7C2": {
+      "DeletionPolicy": "Retain",
+      "Properties": {
+        "LogGroupName": {
+          "Fn::Join": [
+            "",
+            [
+              "/aws/lambda/",
+              {
+                "Ref": "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
+              },
+            ],
+          ],
+        },
+        "RetentionInDays": 731,
+      },
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
     },
     "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
       "Properties": {
@@ -1543,7 +1562,7 @@ exports[`snapshot test for prod 1`] = `
             "Arn",
           ],
         },
-        "Runtime": "nodejs20.x",
+        "Runtime": "nodejs22.x",
         "Timeout": 900,
       },
       "Type": "AWS::Lambda::Function",
@@ -2961,7 +2980,7 @@ exports[`snapshot test for prod 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:3.49.1",
+            "Image": "langfuse/langfuse:3.65.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -3472,7 +3491,7 @@ exports[`snapshot test for prod 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:3.49.1",
+            "Image": "langfuse/langfuse-worker:3.65.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
