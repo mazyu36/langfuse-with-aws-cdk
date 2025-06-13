@@ -145,7 +145,7 @@ exports[`snapshot test for prod 1`] = `
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "9d043014be736e8162bcc7ec5590cc6d2ff24fd0d9c73a5c5d595151c5fdad00.zip",
+          "S3Key": "c099eb4e32cbf1c3da9c45a3b280efe2bed38d27d74aa72702b67d86d1b52354.zip",
         },
         "Handler": "index.handler",
         "Role": {
@@ -158,25 +158,6 @@ exports[`snapshot test for prod 1`] = `
         "Timeout": 120,
       },
       "Type": "AWS::Lambda::Function",
-    },
-    "AWS679f53fac002430cb0da5b7982bd2287LogGroup449FB7C2": {
-      "DeletionPolicy": "Retain",
-      "Properties": {
-        "LogGroupName": {
-          "Fn::Join": [
-            "",
-            [
-              "/aws/lambda/",
-              {
-                "Ref": "AWS679f53fac002430cb0da5b7982bd22872D164C4C",
-              },
-            ],
-          ],
-        },
-        "RetentionInDays": 731,
-      },
-      "Type": "AWS::Logs::LogGroup",
-      "UpdateReplacePolicy": "Retain",
     },
     "AWS679f53fac002430cb0da5b7982bd2287ServiceRoleC1EA0FF2": {
       "Properties": {
