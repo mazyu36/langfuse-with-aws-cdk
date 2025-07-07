@@ -19,7 +19,7 @@
     "@types/node": "24.0.7",
     "@typescript-eslint/eslint-plugin": "^8.35.0",
     "@typescript-eslint/parser": "^8.35.1",
-    "typescript-eslint": "^8.34.1",
+    "typescript-eslint": "^8.35.1",
     "aws-cdk": "2.1020.2",
     "eslint": "^9.30.0",
     "eslint-config-prettier": "^10.1.5",
