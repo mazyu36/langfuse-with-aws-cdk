@@ -22,7 +22,7 @@
     "typescript-eslint": "^8.36.0",
     "aws-cdk": "2.1020.2",
     "eslint": "^9.31.0",
-    "eslint-config-prettier": "^10.1.5",
+    "eslint-config-prettier": "^10.1.8",
     "jest": "^30.0.4",
     "prettier": "^3.6.2",
     "ts-jest": "^29.4.0",
