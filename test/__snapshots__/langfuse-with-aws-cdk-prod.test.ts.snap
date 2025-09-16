@@ -145,7 +145,7 @@ exports[`snapshot test for prod 1`] = `
       "Properties": {
         "Code": {
           "S3Bucket": "cdk-hnb659fds-assets-123456789012-us-east-1",
-          "S3Key": "c099eb4e32cbf1c3da9c45a3b280efe2bed38d27d74aa72702b67d86d1b52354.zip",
+          "S3Key": "34a66902956b031404ef497526f619b900363fe7fd65ff02b1de4c30fe10c034.zip",
         },
         "Handler": "index.handler",
         "Role": {
