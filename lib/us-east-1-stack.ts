@@ -62,7 +62,7 @@ export class UsEast1Stack extends cdk.Stack {
       if (ipv4IpSet) {
         rules.push({
           name: 'AllowIPv4',
-          priority: priority++,
+          priority: priority,
           action: { allow: {} },
           statement: {
             ipSetReferenceStatement: {
@@ -75,12 +75,13 @@ export class UsEast1Stack extends cdk.Stack {
             sampledRequestsEnabled: true,
           },
         });
+        priority++;
       }
 
       if (ipv6IpSet) {
         rules.push({
           name: 'AllowIPv6',
-          priority: priority++,
+          priority: priority,
           action: { allow: {} },
           statement: {
             ipSetReferenceStatement: {
