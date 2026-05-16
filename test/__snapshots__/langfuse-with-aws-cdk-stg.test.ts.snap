@@ -2395,7 +2395,7 @@ exports[`snapshot test for stg 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse:latest",
+            "Image": "langfuse/langfuse:3.174.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
@@ -2906,7 +2906,7 @@ exports[`snapshot test for stg 1`] = `
               "StartPeriod": 30,
               "Timeout": 5,
             },
-            "Image": "langfuse/langfuse-worker:latest",
+            "Image": "langfuse/langfuse-worker:3.174.1",
             "LogConfiguration": {
               "LogDriver": "awslogs",
               "Options": {
